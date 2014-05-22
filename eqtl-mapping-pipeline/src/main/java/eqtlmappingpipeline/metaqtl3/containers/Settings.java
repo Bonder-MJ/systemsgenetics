@@ -35,6 +35,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     // SNP QC
     // Analysis settings
     public boolean performParametricAnalysis = false;                          // Perform parametric analysis
+    public boolean performTwoPartModel = false;                          // Perform parametric analysis
     public boolean useAbsoluteZScorePValue = false;                            // Use absolute Z-score? (required for finding opposite allelic effects)
     public int ciseQTLAnalysMaxSNPProbeMidPointDistance = 250000;                       // Midpoint distance for declaring an eQTL effect CIS
     public int maxNrMostSignificantEQTLs = 500000;                             // Max number of results stored in memory
@@ -88,6 +89,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
 
         String analysisType = null;
         String correlationType = null;
+        String twoPartModel = null;
         Boolean useAbsPVal = null;
         Integer nrthread = null;
         Integer cisDist = null;
@@ -204,6 +206,16 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             }
         } else {
             performParametricAnalysis = true;
+        }
+        
+        try {
+            twoPartModel = config.getString("defaults.analysis.TwoPartModel");
+        } catch (Exception e) {
+        }
+        if (twoPartModel != null) {
+            if (twoPartModel.toLowerCase().contains("two")) {
+                performTwoPartModel = true;
+            }
         }
 
         Boolean useIdenticalRanksForTies = null;
@@ -698,6 +710,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
                 + "performCiseQTLAnalysis\t" + cisAnalysis + "\n"
                 + "performTranseQTLAnalysis\t" + transAnalysis + "\n"
                 + "performParametricAnalysis\t" + performParametricAnalysis + "\n"
+                + "performTwoPartModel\t" + performTwoPartModel + "\n"
                 + "useAbsoluteZScorePValue\t" + useAbsoluteZScorePValue + "\n"
                 + "ciseQTLAnalysMaxSNPProbeMidPointDistance\t" + ciseQTLAnalysMaxSNPProbeMidPointDistance + "\n"
                 + "maxNrMostSignificantEQTLs\t" + maxNrMostSignificantEQTLs + "\n"
