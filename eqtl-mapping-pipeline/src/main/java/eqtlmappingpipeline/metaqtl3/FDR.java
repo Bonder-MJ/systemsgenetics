@@ -4,13 +4,11 @@
  */
 package eqtlmappingpipeline.metaqtl3;
 
+import eqtlmappingpipeline.metaqtl3.graphics.QQPlot;
 import gnu.trove.map.hash.TDoubleIntHashMap;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import umcg.genetica.io.Gpio;
 import umcg.genetica.io.text.TextFile;
@@ -309,9 +307,7 @@ public class FDR {
         ArrayList<String> currentPvalueEqtlSnps = new ArrayList<String>();
         ArrayList<String> currentPvalueEqtlProbes = new ArrayList<String>();
 
-
         int lastUsedPermutedPvalueIndex = 0;
-
 
         int nrSignificantEQTLs = 0;
 
@@ -376,7 +372,6 @@ public class FDR {
 
                     }
 
-
                     //Create new temp list for this pvalue
                     currentPvalue = eQtlPvalue;
                     currentPvalueEqtls.clear();
@@ -429,20 +424,17 @@ public class FDR {
             if (fdr <= fdrcutoff) {
                 if (!visitedProbes.contains(cachedEqtlsProbe)) {
                     outputWriterEProbes.append(currentString.toString());
-                    visitedSnps.add(cachedEqtlsProbe);
+                    visitedProbes.add(cachedEqtlsProbe);
                 }
                 if (!visitedSnps.contains(cachedEqtlsSnps)) {
                     outputWriterESNPs.append(currentString.toString());
                     visitedSnps.add(cachedEqtlsSnps);
-
                 }
 
                 outputWriterSignificant.append(currentString.toString());
                 ++nrSignificantEQTLs;
             }
-
         }
-
 
         realEQTLs.close();
         outputWriterAll.close();
@@ -459,12 +451,12 @@ public class FDR {
 
             System.err.println("Sorry, QQ plot function is temporarily (or for a very long time) unavailable.");
 
-            //System.out.println("Creating QQ plot. This might take a while...");
-            //QQPlot qq = new QQPlot();
-            //String fileName = baseDir + "/eQTLsFDR" + fdrcutoff + fileSuffix + "-QQPlot.pdf";
-            //qq.draw(fileName, fdrcutoff, nrPermutationsFDR,
-            //		maxNrMostSignificantEQTLs, permutedPValues.toArray(), nrRealDataEQTLs, pValues,
-            //		pValueSignificant, nrSignificantEQTLs);
+//            System.out.println("Creating QQ plot. This might take a while...");
+//            QQPlot qq = new QQPlot();
+//            String fileName = baseDir + "/eQTLsFDR" + fdrcutoff + fileSuffix + "-QQPlot.pdf";
+//            qq.draw(fileName, fdrcutoff, nrPermutationsFDR,
+//            		maxNrMostSignificantEQTLs, permutedPValues.toArray(), nrRealDataEQTLs, pValues,
+//            		pValueSignificant, nrSignificantEQTLs);
         }
 
     }
