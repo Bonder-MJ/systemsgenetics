@@ -73,7 +73,7 @@ public class Ase {
 		System.out.println();
 		System.out.println("          --- Version: " + VERSION + " ---");
 		System.out.println();
-		System.out.println("More information: http://molgenis.org/systemsgenetics");
+		System.out.println("More information: http://www.molgenis.org/systemsgenetics/Allele-Specific-Expression");
 		System.out.println();
 
 		System.out.println("Current date and time: " + DATE_TIME_FORMAT.format(currentDataTime));
@@ -360,7 +360,7 @@ public class Ase {
 
 		final BufferedWriter outputWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputFile), AseConfiguration.ENCODING));
 
-		outputWriter.append("Meta_P\tMeta_Z\tChr\tPos\tSnpId\tSample_Count\tRef_Allele\tAlt_Allele\tCount_Pearson_R\tGenes\tRef_Counts\tAlt_Counts");
+		outputWriter.append("Meta_P\tMeta_Z\tChr\tPos\tSnpId\tSample_Count\tRef_Allele\tAlt_Allele\tCount_Pearson_R\tGenes\tRef_Counts\tAlt_Counts\tBinom_P\tSampleIds");
 
 		if (encounteredBaseQuality) {
 			outputWriter.append("\tRef_MeanBaseQuality\tAlt_MeanBaseQuality\tRef_MeanBaseQualities\tAlt_MeanBaseQualities");
@@ -479,7 +479,23 @@ public class Ase {
 				}
 				outputWriter.append(String.valueOf(aseVariant.getA2Counts().getQuick(i)));
 			}
-
+			
+			outputWriter.append('\t');
+			for (int i = 0; i < aseVariant.getPValues().size(); ++i) {
+				if (i > 0) {
+					outputWriter.append(',');
+				}
+				outputWriter.append(String.valueOf(aseVariant.getPValues().getQuick(i)));
+			}
+			
+			outputWriter.append('\t');
+			for (int i = 0; i < aseVariant.getSampleIds().size(); ++i) {
+				if (i > 0) {
+					outputWriter.append(',');
+				}
+				outputWriter.append(aseVariant.getSampleIds().get(i));
+			}
+			
 			if (encounteredBaseQuality) {
 
 				StringBuilder refMeanBaseQualities = new StringBuilder();
@@ -527,9 +543,9 @@ public class Ase {
 	/**
 	 *
 	 *
-	 * @param sampleToRefSampleFile unmodifiable map with key sample ID in
+	 * @param sampleToRefSampleFile 
 	 * reference and value sample ID of study
-	 * @return
+	 * @return unmodifiable map with key sample ID in
 	 */
 	private static Map<String, String> readSampleMapping(File sampleToRefSampleFile) throws FileNotFoundException, UnsupportedEncodingException, IOException, Exception {
 

@@ -30,10 +30,11 @@ public class CompareAseToEqtl {
 	@SuppressWarnings("ManualArrayToCollectionCopy")
 	public static void main(String[] args) throws Exception {
 
-//		eQTLTextFile eQTLsTextFile = new eQTLTextFile("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\batch9_eQTLmapping\\result_all_maf0.05_call0.5_pcs100_normalizedPCA_meta_specialPermutation\\eQTLsFDR0.05-ProbeLevel.txt", false);
-		eQTLTextFile eQTLsTextFile = new eQTLTextFile("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\batch9_eQTLmapping\\result_geuvadis_maf0.05_call0.5_pcs100_normalizedPCA_meta\\eQTLsFDR0.05-ProbeLevel.txt", false);
+		//eQTLTextFile eQTLsTextFile = new eQTLTextFile("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\batch9_eQTLmapping\\result_non-geuvadis_maf0.05_call0.5_pcs100_normalizedPCA_meta\\notInGeuvadis.txt", false);
+		eQTLTextFile eQTLsTextFile = new eQTLTextFile("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\batch9_eQTLmapping\\result_all_maf0.05_call0.5_pcs100_normalizedPCA_meta_specialPermutation\\eQTLsFDR0.05-ProbeLevel.txt", false);
+		//eQTLTextFile eQTLsTextFile = new eQTLTextFile("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\batch9_eQTLmapping\\result_geuvadis_maf0.05_call0.5_pcs100_normalizedPCA_meta\\eQTLsFDR0.05-ProbeLevel.txt", false);
 
-		BufferedReader aseReader = new BufferedReader(new FileReader("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\Ase\\geuvadis_r20_a10_p0_s5_gatkGeno\\ase_bh.txt"));
+		BufferedReader aseReader = new BufferedReader(new FileReader("D:\\UMCG\\Genetica\\Projects\\RnaSeqEqtl\\Ase\\all_maskAll_r20_a10_p0_s5_rq0_gatkGeno\\ase_bh.txt"));
 
 		HashMap<String, ArrayList<EQTL>> eQtls = new HashMap<String, ArrayList<EQTL>>();
 
@@ -52,6 +53,8 @@ public class CompareAseToEqtl {
 		int aseWithEQtl = 0;
 		int sameDirection = 0;
 		int oppositeDirection = 0;
+		
+		HashSet<String> countedGenes = new HashSet<String>();
 
 		aseReader.readLine();//header
 		String line;
@@ -73,6 +76,13 @@ public class CompareAseToEqtl {
 				for (EQTL eQtl : eQtls.get(elements[2] + ":" + elements[3])) {
 					if (eQtl != null && aseGenes.contains(eQtl.getProbe())) {
 
+						if(countedGenes.contains(eQtl.getProbe())){
+							continue;
+						}
+						countedGenes.add(eQtl.getProbe());
+						
+						System.out.println(eQtl.getProbe());
+						
 						//if(eQtl.getRsChr() != 6 && eQtl.getRsChrPos() < 20000000 || eQtl.getRsChrPos() > 40000000) {
 
 						++aseWithEQtl;

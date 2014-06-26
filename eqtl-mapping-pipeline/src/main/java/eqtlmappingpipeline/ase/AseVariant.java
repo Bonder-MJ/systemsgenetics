@@ -3,6 +3,7 @@ package eqtlmappingpipeline.ase;
 import cern.colt.list.tdouble.DoubleArrayList;
 import cern.colt.list.tint.IntArrayList;
 import cern.jet.stat.tdouble.Probability;
+import java.util.ArrayList;
 import org.apache.commons.math3.stat.inference.AlternativeHypothesis;
 import org.apache.commons.math3.stat.inference.BinomialTest;
 import org.apache.commons.math3.stat.regression.SimpleRegression;
@@ -24,6 +25,8 @@ public class AseVariant implements Comparable<AseVariant>{
 	private final IntArrayList a2Counts;
 	private final DoubleArrayList a1MeanBaseQualities;
 	private final DoubleArrayList a2MeanBaseQualities;
+	private final DoubleArrayList pValues;
+	private final ArrayList<String> sampleIds;
 	private double metaZscore;
 	private double metaPvalue;
 	private double countPearsonR;
@@ -38,8 +41,10 @@ public class AseVariant implements Comparable<AseVariant>{
 		this.a2 = a2;
 		this.a1Counts = new IntArrayList();
 		this.a2Counts = new IntArrayList();
+		this.pValues = new DoubleArrayList();
 		this.a1MeanBaseQualities = new DoubleArrayList();
 		this.a2MeanBaseQualities = new DoubleArrayList();
+		this.sampleIds = new ArrayList<String>();
 		this.metaZscore = Double.NaN;
 		this.metaPvalue = Double.NaN;
 		this.countPearsonR = Double.NaN;
@@ -91,7 +96,7 @@ public class AseVariant implements Comparable<AseVariant>{
 
 			regression.addData(a1Counts.getQuick(i), a2Counts.getQuick(i));
 
-			final double pvalue = btest.binomialTest(a1Counts.getQuick(i) + a2Counts.getQuick(i), a1Counts.getQuick(i), 0.5, AlternativeHypothesis.TWO_SIDED);
+			final double pvalue = pValues.getQuick(i);
 
 			// we used 2 sided test so divide by 2
 			//double zscore = normalDist.inverseCumulativeProbability(pvalue/2);
@@ -130,11 +135,11 @@ public class AseVariant implements Comparable<AseVariant>{
 		return metaPvalue;
 	}
 
-	public synchronized void addCounts(int a1Count, int a2Count) {
-		addCounts(a1Count, a2Count, Double.NaN, Double.NaN);
+	public synchronized void addCounts(int a1Count, int a2Count, String sampleId) {
+		addCounts(a1Count, a2Count, sampleId, Double.NaN, Double.NaN);
 	}
 	
-	public synchronized void addCounts(int a1Count, int a2Count, double a1MeanBaseQuality, double a2MeanBaseQuality) {
+	public synchronized void addCounts(int a1Count, int a2Count, String sampleId, double a1MeanBaseQuality, double a2MeanBaseQuality) {
 
 		this.metaZscore = Double.NaN;//Reset meta Z-score when adding new data
 		this.metaPvalue = Double.NaN;
@@ -143,8 +148,12 @@ public class AseVariant implements Comparable<AseVariant>{
 		a1Counts.add(a1Count);
 		a2Counts.add(a2Count);
 		
+		pValues.add(btest.binomialTest(a1Count + a2Count, a1Count, 0.5, AlternativeHypothesis.TWO_SIDED));
+		
 		a1MeanBaseQualities.add(a1MeanBaseQuality);
 		a2MeanBaseQualities.add(a2MeanBaseQuality);
+		
+		sampleIds.add(sampleId);
 
 	}
 
@@ -175,4 +184,12 @@ public class AseVariant implements Comparable<AseVariant>{
 		return countPearsonR;
 	}
 
+	public ArrayList<String> getSampleIds() {
+		return sampleIds;
+	}
+
+	public DoubleArrayList getPValues() {
+		return pValues;
+	}
+	
 }
