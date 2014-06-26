@@ -565,14 +565,11 @@ public class FDR {
                 nrEQTLs = itr;
             }
         }
-        boolean[] significant = new boolean[100001];
+        boolean[] significant = new boolean[significantPvalue.size()];
         
         int pos = 0;
         for (Boolean i : significantPvalue) {
             significant[pos] = i;
-            if(pos==100000){
-                break;
-            }
             pos++;
         }
 
