@@ -26,6 +26,10 @@ import umcg.genetica.io.trityper.util.ChrAnnotation;
  * @author harmjan
  */
 public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
+    
+    public enum TwoPartModelMode {
+        BOTH, CONTINUES, BINARY
+    };
 
     // Output
     public String settingsTextToReplace = null;                                // Replace this text in the configuration XML file
@@ -39,7 +43,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     // SNP QC
     // Analysis settings
     public boolean performParametricAnalysis = false;                          // Perform parametric analysis
-    public String performTwoPartModel = null;                          // Perform parametric analysis
+    public TwoPartModelMode performTwoPartModel = null;                                  // Perform parametric analysis
     public boolean useAbsoluteZScorePValue = false;                            // Use absolute Z-score? (required for finding opposite allelic effects)
     public int ciseQTLAnalysMaxSNPProbeMidPointDistance = 250000;              // Midpoint distance for declaring an eQTL effect CIS
     public int maxNrMostSignificantEQTLs = 500000;                             // Max number of results stored in memory
@@ -83,7 +87,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     public boolean metaAnalyseInteractionTerms = false;
     public boolean metaAnalyseModelCorrelationYHat = false;
     public String pathwayDefinition = null;
-    public boolean snpProbeConfineBasedOnChrPos = false; //Snp in snp confine and snp probe confine list are defined as chr:pos instead of snp ID.
+    public boolean snpProbeConfineBasedOnChrPos = false;                       //Snp in snp confine and snp probe confine list are defined as chr:pos instead of snp ID.
     private static final Pattern TAB_PATTERN = Pattern.compile("\\t");
     public boolean permuteCovariates;
     public Random r;
@@ -215,11 +219,11 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         }
         if (twoPartModel != null) {
             if (twoPartModel.toLowerCase().equals("both")) {
-                performTwoPartModel = "BOTH";
+                performTwoPartModel = TwoPartModelMode.BOTH;
             } else if (twoPartModel.toLowerCase().equals("continues")) {
-                performTwoPartModel = "CONTINUES";
+                performTwoPartModel = TwoPartModelMode.CONTINUES;
             } else if (twoPartModel.toLowerCase().equals("binary")) {
-                performTwoPartModel = "BINARY";
+                performTwoPartModel = TwoPartModelMode.BINARY;
             } else {
                 twoPartModel=null;
             }

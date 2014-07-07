@@ -10,6 +10,7 @@ import cern.jet.random.tdouble.StudentT;
 import cern.jet.random.tdouble.engine.DRand;
 import eqtlmappingpipeline.metaqtl3.containers.WorkPackage;
 import eqtlmappingpipeline.metaqtl3.containers.Result;
+import eqtlmappingpipeline.metaqtl3.containers.Settings.TwoPartModelMode;
 import umcg.genetica.math.stats.Descriptives;
 import eqtlmappingpipeline.metaqtl3.graphics.EQTLPlotter;
 import java.util.HashSet;
@@ -47,7 +48,7 @@ class CalculationThread extends Thread {
     private boolean cisOnly;
 //    private boolean cisTrans;
     private boolean transOnly;
-    private String m_twoPartModel;
+    private Settings.TwoPartModelMode m_twoPartModel;
 //    private boolean useAbsolutePValues;
     private final EQTLPlotter m_eQTLPlotter;
     private final double m_pvaluePlotThreshold;
@@ -609,7 +610,7 @@ class CalculationThread extends Thread {
         if (covariateRawData != null) {
             throw new UnsupportedOperationException("Two part model does not support covariates yet.");
         }
-        if (m_twoPartModel.equals("BOTH")) {
+        if (m_twoPartModel.equals(TwoPartModelMode.BOTH)) {
             throw new UnsupportedOperationException("Two part model with both types outputed not supported yet.");
         }
 
@@ -625,12 +626,10 @@ class CalculationThread extends Thread {
                 }
             }
         }
-
-        if (!containsZero && m_twoPartModel.equals("CONTINUES")) {
+        
+        if (!containsZero && m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
             test(d, p, probeId, x, originalGenotypes, varianceX, varianceY, meanY, includeExpressionSample, sampleCount, rawData, covariateRawData, r);
-        }
-
-        if (m_twoPartModel.equals("BINARY")) {
+        } else if (m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
             //Part One 
             double[] y = null;
             
@@ -638,14 +637,14 @@ class CalculationThread extends Thread {
             int itr = 0;
             double sum = 0;
             double[] tmpY = rawData[probeId];
-
+            
             // recalculate mean and variance
             for (int s = 0; s < sampleCount; s++) {
                 if (includeExpressionSample[s]) {
-                    if (tmpY[s] != 0) {
-                        y[itr] = 1;
+                    if (tmpY[s] != 0.0d) {
+                        y[itr] = 1.0d;
                     } else {
-                        y[itr] = 0;
+                        y[itr] = 0.0d;
                     }
                     sum += y[itr];
                     itr++;
@@ -697,7 +696,6 @@ class CalculationThread extends Thread {
             }
         } else if (m_twoPartModel.equals("CONTINUES")) {
             // Part Two normal mapping on selection
-
 
             ArrayDoubleList y2 = new ArrayDoubleList();
             ArrayDoubleList x2 = new ArrayDoubleList();
