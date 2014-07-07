@@ -57,9 +57,10 @@ class CalculationThread extends Thread {
 //    private boolean m_binaryoutput = false;
     private final DoubleMatrixDataset<String, String>[] m_covariates;
     private final boolean m_useAbsoluteZScores;
-    private final boolean testSNPsPresentInBothDatasets;
+    private final boolean testSNPsPresentInBothDatasets; 
     private boolean metaAnalyseInteractionTerms = false;
     private boolean metaAnalyseModelCorrelationYHat = false;
+    private DRand randomEngine = new cern.jet.random.tdouble.engine.DRand();
 //    private RConnection rConnection;
 
     CalculationThread(int i, LinkedBlockingQueue<WorkPackage> packageQueue, LinkedBlockingQueue<WorkPackage> resultQueue, TriTyperExpressionData[] expressiondata,
@@ -458,7 +459,7 @@ class CalculationThread extends Thread {
                 double tInteraction = betaInteraction / seInteraction;
                 double pValueInteraction;
                 double zScoreInteraction;
-                DRand randomEngine = new cern.jet.random.tdouble.engine.DRand();
+                
                 StudentT tDistColt = new cern.jet.random.tdouble.StudentT(x.length - 4, randomEngine);
                 if (tInteraction < 0) {
                     pValueInteraction = tDistColt.cdf(tInteraction);
