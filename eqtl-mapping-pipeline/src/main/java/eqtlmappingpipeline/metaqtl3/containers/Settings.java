@@ -43,7 +43,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     // SNP QC
     // Analysis settings
     public boolean performParametricAnalysis = false;                          // Perform parametric analysis
-    public TwoPartModelMode performTwoPartModel = null;                                  // Perform parametric analysis
+    public TwoPartModelMode performTwoPartModel = null;                        // Perform twopart model analysis
     public boolean useAbsoluteZScorePValue = false;                            // Use absolute Z-score? (required for finding opposite allelic effects)
     public int ciseQTLAnalysMaxSNPProbeMidPointDistance = 250000;              // Midpoint distance for declaring an eQTL effect CIS
     public int maxNrMostSignificantEQTLs = 500000;                             // Max number of results stored in memory
