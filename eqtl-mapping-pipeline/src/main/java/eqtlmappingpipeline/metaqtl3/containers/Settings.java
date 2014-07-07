@@ -111,7 +111,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         Double callrate = null;
         String correctiontype = null;
         Integer randomseed = null;
-        String fdrtype = null;
+        String fdrtype = "probe";
         boolean largeFdrFileOut = true;
         Double mtThreshold = null;
         Integer numPermutations = null;
@@ -244,15 +244,18 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
          public boolean metaAnalyseInteractionTerms = false;
          public boolean metaAnalyseModelCorrelationYHat = false;
          */
+        metaAnalyseInteractionTerms = false;
         Boolean metaAnalyzeInteractionTermsB = null;
         try {
             metaAnalyzeInteractionTermsB = config.getBoolean("defaults.analysis.metaAnalyseInteractionTerms", null);
+            metaAnalyseInteractionTerms = metaAnalyzeInteractionTermsB;
         } catch (Exception e) {
+            metaAnalyseInteractionTerms = false;
         }
 
         permuteCovariates = false;
         try {
-            metaAnalyzeInteractionTermsB = config.getBoolean("defaults.analysis.permuteCovariates", false);
+            permuteCovariates = config.getBoolean("defaults.analysis.permuteCovariates", false);
         } catch (Exception e) {
         }
         if (metaAnalyzeInteractionTermsB != null) {
@@ -298,7 +301,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
                 nrThreads = nrthread;
             }
         }
-        
+
         try {
             randomseed = config.getInteger("defaults.analysis.randomseed", null);
         } catch (Exception e) {
@@ -337,7 +340,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         }
 
         try {
-            fdrtype = config.getString("defaults.multipletesting.fdrtype", null);
+            fdrtype = config.getString("defaults.multipletesting.fdrtype", "probe");
             fdrtype = fdrtype.toLowerCase();
             fdrtype = fdrtype.replaceAll("-", "");
             fdrtype = fdrtype.replaceAll("level", "");
@@ -352,7 +355,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
                 fdrType = FDRMethod.FULL;
             }
         }
-        
+
         try {
             largeFdrFileOut = config.getBoolean("defaults.multipletesting.fullFdrOutput", true);
         } catch (Exception e) {
@@ -367,7 +370,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             if (settingsTextToReplace != null && outdir.contains(settingsTextToReplace)) {
                 outdir = outdir.replace(settingsTextToReplace, settingsTextReplaceWith);
             }
-            
+
             if (settingsTextToReplace2 != null && outdir.contains(settingsTextToReplace2)) {
                 outdir = outdir.replace(settingsTextToReplace2, settingsTextReplace2With);
             }
@@ -391,18 +394,18 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             System.out.println("Error: please supply an output directory.");
             System.exit(-1);
         }
-        
+
         try {
             createBinaryOutputFiles = config.getBoolean("defaults.output.binaryoutput", false);
             createTEXTOutputFiles = config.getBoolean("defaults.output.textoutput", true);
         } catch (Exception e) {
         }
-        
+
         try {
             outputplotthreshold = config.getDouble("defaults.output.outputplotthreshold", null);
         } catch (Exception e) {
         }
-        
+
         if (outputplotthreshold != null) {
             plotOutputPValueCutOff = outputplotthreshold;
         } else {
@@ -414,7 +417,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             if (settingsTextToReplace != null && outputplotdirectory.contains(settingsTextToReplace)) {
                 outputplotdirectory = outputplotdirectory.replace(settingsTextToReplace, settingsTextReplaceWith);
             }
-            
+
             if (settingsTextToReplace2 != null && outputplotdirectory.contains(settingsTextToReplace2)) {
                 outputplotdirectory = outputplotdirectory.replace(settingsTextToReplace2, settingsTextReplace2With);
             }
@@ -596,7 +599,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         regressOutEQTLEffectFileName = null;
         try {
             regressOutEQTLEffectFileName = config.getString("defaults.analysis.regressOutEQTLEffects", null);
-            if(regressOutEQTLEffectFileName.equals("")){
+            if (regressOutEQTLEffectFileName.equals("")) {
                 regressOutEQTLEffectFileName = null;
             }
         } catch (Exception e) {
@@ -613,10 +616,9 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             pathwayDef = config.getString("defaults.analysis.pathwaydefinition", null);
         } catch (Exception e) {
         }
-        if(pathwayDef!=null && !pathwayDef.equals("")){
+        if (pathwayDef != null && !pathwayDef.equals("")) {
             this.pathwayDefinition = pathwayDef;
         }
-        
 
         // dataset parameters
         int i = 0;
@@ -625,7 +627,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         if (settingsTextToReplace != null && dataset.contains(settingsTextToReplace)) {
             dataset = dataset.replace(settingsTextToReplace, settingsTextReplaceWith);
         }
-        
+
         if (settingsTextToReplace2 != null && dataset.contains(settingsTextToReplace2)) {
             dataset = dataset.replace(settingsTextToReplace2, settingsTextReplace2With);
         }
@@ -713,8 +715,8 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             String covariateFile = null;
             try {
                 covariateFile = config.getString("datasets.dataset(" + i + ").covariates", null);
-                if(covariateFile.equals("")){
-                    covariateFile=null;
+                if (covariateFile.equals("")) {
+                    covariateFile = null;
                 }
                 if (settingsTextToReplace != null && covariateFile.contains(settingsTextToReplace)) {
                     covariateFile = covariateFile.replace(settingsTextToReplace, settingsTextReplaceWith);
