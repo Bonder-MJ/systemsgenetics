@@ -241,7 +241,6 @@ class CalculationThread extends Thread {
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
                             if(m_twoPartModel != null){
-                                System.out.println("In");
                                 testTwoPart(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
                             } else {
                                 test(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
@@ -283,7 +282,6 @@ class CalculationThread extends Thread {
                             Integer probeId = m_probeTranslation.get(d, pid);
                             if (probeId != -9) {
                                 if(m_twoPartModel != null){
-                                    System.out.println("In");
                                     testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
                                 } else {
                                     test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
@@ -321,7 +319,6 @@ class CalculationThread extends Thread {
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
                             if(m_twoPartModel != null){
-                                System.out.println("In");
                                 testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
                             } else {
                                 test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
@@ -349,7 +346,14 @@ class CalculationThread extends Thread {
                 double pval = dsResults.pvalues[p];
                 if (!Double.isNaN(pval)) {
                     if (pval < m_pvaluePlotThreshold) {
-                        ploteQTL(wp, p);
+                        if(m_twoPartModel.equals(TwoPartModelMode.BINARY)){
+                            m_eQTLPlotter.drawBinary(wp, p);
+                        } else if(m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
+                            System.out.println("Not supported yet.");
+                        } else {
+                            m_eQTLPlotter.draw(wp, p);
+                        } 
+                        
                     }
                 }
             }
@@ -925,10 +929,6 @@ class CalculationThread extends Thread {
         }
     }
     
-
-    private void ploteQTL(WorkPackage wp, int p) {
-        m_eQTLPlotter.draw(wp, p);
-    }
     private int tmpbuffersize = 4096;
 //
 //    private byte[] deflate(byte[] input) {
