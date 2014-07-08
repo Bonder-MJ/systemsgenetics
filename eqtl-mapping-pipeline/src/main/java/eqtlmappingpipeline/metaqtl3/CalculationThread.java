@@ -48,7 +48,7 @@ class CalculationThread extends Thread {
     private boolean cisOnly;
 //    private boolean cisTrans;
     private boolean transOnly;
-    private Settings.TwoPartModelMode m_twoPartModel;
+    private Settings.TwoPartModelMode m_twoPartModel = null;
 //    private boolean useAbsolutePValues;
     private final EQTLPlotter m_eQTLPlotter;
     private final double m_pvaluePlotThreshold;
@@ -57,6 +57,7 @@ class CalculationThread extends Thread {
     private WorkPackage currentWP;
 //    private boolean m_binaryoutput = false;
     private final DoubleMatrixDataset<String, String>[] m_covariates;
+
     private final boolean m_useAbsoluteZScores;
     private final boolean testSNPsPresentInBothDatasets; 
     private boolean metaAnalyseInteractionTerms = false;
@@ -65,8 +66,7 @@ class CalculationThread extends Thread {
 //    private RConnection rConnection;
 
     CalculationThread(int i, LinkedBlockingQueue<WorkPackage> packageQueue, LinkedBlockingQueue<WorkPackage> resultQueue, TriTyperExpressionData[] expressiondata,
-            DoubleMatrixDataset<String, String>[] covariates,
-            IntMatrix2D probeTranslationTable,
+            DoubleMatrixDataset<String, String>[] covariates, IntMatrix2D probeTranslationTable,
             int[][] expressionToGenotypeIds, Settings settings, EQTLPlotter plotter, boolean binaryoutput, boolean useAbsoluteZScores, boolean testSNPsPresentInBothDatasets) {
 //        m_binaryoutput = binaryoutput;
         m_name = i;
@@ -74,9 +74,9 @@ class CalculationThread extends Thread {
         m_result_queue = resultQueue;
         m_probeTranslation = probeTranslationTable;
         m_expressiondata = expressiondata;
-        m_twoPartModel = settings.performTwoPartModel;
         boolean m_cis = settings.cisAnalysis;
         boolean m_trans = settings.transAnalysis;
+        m_twoPartModel = settings.performTwoPartModel;
         metaAnalyseInteractionTerms = settings.metaAnalyseInteractionTerms;
         metaAnalyseModelCorrelationYHat = settings.metaAnalyseModelCorrelationYHat;
         m_useAbsoluteZScores = useAbsoluteZScores;
@@ -87,6 +87,7 @@ class CalculationThread extends Thread {
         probeVariance = new double[m_numDatasets][0];
         probeMean = new double[m_numDatasets][0];
         probeName = new String[m_numDatasets][0];
+        
         for (int d = 0; d < m_numDatasets; d++) {
             probeVariance[d] = expressiondata[d].getProbeVariance();
             probeMean[d] = expressiondata[d].getProbeMean();
@@ -153,7 +154,6 @@ class CalculationThread extends Thread {
 //        if (rConnection != null) {
 //            rConnection.close();
 //        }
-
     }
 
     public void kill() {
@@ -240,10 +240,11 @@ class CalculationThread extends Thread {
                         int pid = probes[p];
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
-                            if (m_twoPartModel != null) {
-                                testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                            if(m_twoPartModel != null){
+                                System.out.println("In");
+                                testTwoPart(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
                             } else {
-                                test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                                test(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
                             }
                         } else {
                             dsResults.correlations[d][p] = Double.NaN;
@@ -281,7 +282,8 @@ class CalculationThread extends Thread {
                         if (probestoExclude == null || !probestoExclude.contains(pid)) {
                             Integer probeId = m_probeTranslation.get(d, pid);
                             if (probeId != -9) {
-                                if (m_twoPartModel != null) {
+                                if(m_twoPartModel != null){
+                                    System.out.println("In");
                                     testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
                                 } else {
                                     test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
@@ -318,7 +320,8 @@ class CalculationThread extends Thread {
                     for (int pid = 0; pid < m_numProbes; pid++) {
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
-                            if (m_twoPartModel != null) {
+                            if(m_twoPartModel != null){
+                                System.out.println("In");
                                 testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
                             } else {
                                 test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
@@ -572,7 +575,6 @@ class CalculationThread extends Thread {
 
 //                double stdevy = JSci.maths.ArrayMath.standardDeviation(y);
 //                double stdevx = JSci.maths.ArrayMath.standardDeviation(x);
-            
             double correlation = Correlation.correlateMeanCenteredData(x, y, (stdevy * stdevx));
 
             if (correlation >= -1 && correlation <= 1) {
@@ -603,170 +605,6 @@ class CalculationThread extends Thread {
                 r.zscores[d][p] = Double.NaN;
                 r.correlations[d][p] = Double.NaN;
                 //System.exit(-1);
-            }
-        }
-    }
-
-    private void testTwoPart(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r) {
-        if (covariateRawData != null) {
-            throw new UnsupportedOperationException("Two part model does not support covariates yet.");
-        }
-        if (m_twoPartModel.equals(TwoPartModelMode.BOTH)) {
-            throw new UnsupportedOperationException("Two part model with both types outputed not supported yet.");
-        }
-
-        //X is genotypes!
-        //Y is expression!
-        boolean containsZero = false;
-
-        for (int s = 0; s < sampleCount; s++) {
-            if (includeExpressionSample[s]) {
-                if (rawData[probeId][s] == 0.0) {
-                    containsZero = true;
-                    break;
-                }
-            }
-        }
-        
-        if (!containsZero && m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
-            test(d, p, probeId, x, originalGenotypes, varianceX, varianceY, meanY, includeExpressionSample, sampleCount, rawData, covariateRawData, r);
-        } else if (m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
-            //Part One 
-            double[] y = null;
-            
-            y = new double[x.length];
-            int itr = 0;
-            double sum = 0;
-            double[] tmpY = rawData[probeId];
-            
-            // recalculate mean and variance
-            for (int s = 0; s < sampleCount; s++) {
-                if (includeExpressionSample[s]) {
-                    if (tmpY[s] != 0.0d) {
-                        y[itr] = 1.0d;
-                    } else {
-                        y[itr] = 0.0d;
-                    }
-                    sum += y[itr];
-                    itr++;
-                }
-            }
-            meanY = sum / itr;
-
-            varianceY = Descriptives.variance(y, meanY);
-
-            if (varianceY == 0) {
-                r.zscores[d][p] = Double.NaN;
-                r.correlations[d][p] = Double.NaN;
-            } else {
-                //Calculate correlation coefficient:
-                double stdevy = Math.sqrt(varianceY);
-                double stdevx = Math.sqrt(varianceX);
-
-                double correlation = Correlation.correlateMeanCenteredData(x, y, (stdevy * stdevx));
-
-                if (correlation >= -1 && correlation <= 1) {
-                    double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
-                    double[] xcopy = new double[x.length];
-                    double meanx = JSci.maths.ArrayMath.mean(x);
-                    double meany = meanY;
-                    //                double meany = JSci.maths.ArrayMath.mean(y);
-                    for (int i = 0; i < y.length; i++) {
-                        y[i] -= meany;
-                        y[i] /= stdevy;
-                        xcopy[i] = x[i] - meanx;
-                        xcopy[i] /= stdevx;
-                    }
-                    meany = 0;
-                    double meanxCopy = 0;
-                    //                meany = JSci.maths.ArrayMath.mean(y);
-                    //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
-                    if (determinefoldchange) {
-                        determineFoldchange(originalGenotypes, y, r, d, p);
-                    }
-                    r.zscores[d][p] = zScore;
-                    r.correlations[d][p] = correlation;
-                } else {
-                    // Ususally if the genotype variance is very low
-                    System.err.println("Error! correlation invalid: " + correlation + "; genotype variance = " + varianceX + "; expression variance = " + varianceY);
-                    r.zscores[d][p] = Double.NaN;
-                    r.correlations[d][p] = Double.NaN;
-                    //System.exit(-1);
-                }
-            }
-        } else if (m_twoPartModel.equals("CONTINUES")) {
-            // Part Two normal mapping on selection
-
-            ArrayDoubleList y2 = new ArrayDoubleList();
-            ArrayDoubleList x2 = new ArrayDoubleList();
-
-            int itr = 0;
-            double sumY = 0;
-            double sumX = 0;
-
-            //Add X into this and
-            // recalculate mean and variance
-            for (int s = 0; s < sampleCount; s++) {
-                if (includeExpressionSample[s]) {
-                    if (rawData[probeId][s] != 0) {
-                        x2.add(originalGenotypes[s]);
-                        y2.add(rawData[probeId][s]);
-                        sumX += originalGenotypes[s];
-                        sumY += rawData[probeId][s];
-                        itr++;
-                    }
-                }
-            }
-            double meanX = sumX / itr;
-            meanY = sumY / itr;
-            varianceY = Descriptives.variance(y2.toArray(), meanY);
-            double varianceX2 = Descriptives.variance(x2.toArray(), meanX);
-            
-            //y2 = the new Y;
-            //x2 = the new X;
-
-            if (varianceY == 0 || varianceX2==0) {
-                r.zscores[d][p] = Double.NaN;
-                r.correlations[d][p] = Double.NaN;
-            } else {
-                //Calculate correlation coefficient:
-                double stdevy = Math.sqrt(varianceY);
-                double stdevx = Math.sqrt(varianceX2);
-
-                double correlation = Correlation.correlateMeanCenteredData(x2.toArray(), y2.toArray(), (stdevy * stdevx));
-
-                if (correlation >= -1 && correlation <= 1) {
-                    double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
-                    double[] xcopy = new double[x2.size()];
-                    double meanx = JSci.maths.ArrayMath.mean(x);
-                    double meany = meanY;
-                    double[] y = y2.toArray();
-                    //                double meany = JSci.maths.ArrayMath.mean(y);
-                    for (int i = 0; i < y2.size(); i++) {
-                        y[i] -= meany;
-                        y[i] /= stdevy;
-                        xcopy[i] = x2.get(i) - meanx;
-                        xcopy[i] /= stdevx;
-                    }
-                    
-                    meany = 0;
-                    double meanxCopy = 0;
-                    //                meany = JSci.maths.ArrayMath.mean(y);
-                    //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
-                    if (determinefoldchange) {
-                        determineFoldchange(x2.toArray(), y2.toArray(), r, d, p);
-                    }
-                    r.zscores[d][p] = zScore;
-                    r.correlations[d][p] = correlation;
-                } else {
-                    // Ususally if the genotype variance is very low
-                    System.err.println("Error! correlation invalid: " + correlation + "; genotype variance = " + varianceX + "; expression variance = " + varianceY);
-                    r.zscores[d][p] = Double.NaN;
-                    r.correlations[d][p] = Double.NaN;
-                    //System.exit(-1);
-                }
             }
         }
     }
@@ -925,6 +763,168 @@ class CalculationThread extends Thread {
         wp.setResult(dsResults);
 
     }
+    
+    private void testTwoPart(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r) {
+        if (covariateRawData != null) {
+            throw new UnsupportedOperationException("Two part model does not support covariates yet.");
+        }
+
+        //X is genotypes!
+        //Y is expression!
+        boolean containsZero = false;
+
+        for (int s = 0; s < sampleCount; s++) {
+            if (includeExpressionSample[s]) {
+                if (rawData[probeId][s] == 0.0) {
+                    containsZero = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!containsZero && m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
+            test(d, p, probeId, x, originalGenotypes, varianceX, varianceY, meanY, includeExpressionSample, sampleCount, rawData, covariateRawData, r);
+        } else if (m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
+            //Part One 
+            double[] y = null;
+            
+            y = new double[x.length];
+            int itr = 0;
+            double sum = 0;
+            double[] tmpY = rawData[probeId];
+            
+            // recalculate mean and variance
+            for (int s = 0; s < sampleCount; s++) {
+                if (includeExpressionSample[s]) {
+                    if (tmpY[s] != 0.0d) {
+                        y[itr] = 1.0d;
+                    } else {
+                        y[itr] = 0.0d;
+                    }
+                    sum += y[itr];
+                    itr++;
+                }
+            }
+            meanY = sum / itr;
+
+            varianceY = Descriptives.variance(y, meanY);
+
+            if (varianceY == 0) {
+                r.zscores[d][p] = Double.NaN;
+                r.correlations[d][p] = Double.NaN;
+            } else {
+                //Calculate correlation coefficient:
+                double stdevy = Math.sqrt(varianceY);
+                double stdevx = Math.sqrt(varianceX);
+
+                double correlation = Correlation.correlateMeanCenteredData(x, y, (stdevy * stdevx));
+
+                if (correlation >= -1 && correlation <= 1) {
+                    double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
+                    double[] xcopy = new double[x.length];
+                    double meanx = JSci.maths.ArrayMath.mean(x);
+                    double meany = meanY;
+                    //                double meany = JSci.maths.ArrayMath.mean(y);
+                    for (int i = 0; i < y.length; i++) {
+                        y[i] -= meany;
+                        y[i] /= stdevy;
+                        xcopy[i] = x[i] - meanx;
+                        xcopy[i] /= stdevx;
+                    }
+                    meany = 0;
+                    double meanxCopy = 0;
+                    //                meany = JSci.maths.ArrayMath.mean(y);
+                    //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
+                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
+                    if (determinefoldchange) {
+                        determineFoldchange(originalGenotypes, y, r, d, p);
+                    }
+                    r.zscores[d][p] = zScore;
+                    r.correlations[d][p] = correlation;
+                } else {
+                    // Ususally if the genotype variance is very low
+                    System.err.println("Error! correlation invalid: " + correlation + "; genotype variance = " + varianceX + "; expression variance = " + varianceY);
+                    r.zscores[d][p] = Double.NaN;
+                    r.correlations[d][p] = Double.NaN;
+                    //System.exit(-1);
+                }
+            }
+        } else if (m_twoPartModel.equals("CONTINUES")) {
+            // Part Two normal mapping on selection
+
+            ArrayDoubleList y2 = new ArrayDoubleList();
+            ArrayDoubleList x2 = new ArrayDoubleList();
+
+            int itr = 0;
+            double sumY = 0;
+            double sumX = 0;
+
+            //Add X into this and
+            // recalculate mean and variance
+            for (int s = 0; s < sampleCount; s++) {
+                if (includeExpressionSample[s]) {
+                    if (rawData[probeId][s] != 0) {
+                        x2.add(originalGenotypes[s]);
+                        y2.add(rawData[probeId][s]);
+                        sumX += originalGenotypes[s];
+                        sumY += rawData[probeId][s];
+                        itr++;
+                    }
+                }
+            }
+            double meanX = sumX / itr;
+            meanY = sumY / itr;
+            varianceY = Descriptives.variance(y2.toArray(), meanY);
+            double varianceX2 = Descriptives.variance(x2.toArray(), meanX);
+            
+            //y2 = the new Y;
+            //x2 = the new X;
+
+            if (varianceY == 0 || varianceX2==0) {
+                r.zscores[d][p] = Double.NaN;
+                r.correlations[d][p] = Double.NaN;
+            } else {
+                //Calculate correlation coefficient:
+                double stdevy = Math.sqrt(varianceY);
+                double stdevx = Math.sqrt(varianceX2);
+
+                double correlation = Correlation.correlateMeanCenteredData(x2.toArray(), y2.toArray(), (stdevy * stdevx));
+
+                if (correlation >= -1 && correlation <= 1) {
+                    double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
+                    double[] xcopy = new double[x2.size()];
+                    double meanx = JSci.maths.ArrayMath.mean(x);
+                    double meany = meanY;
+                    double[] y = y2.toArray();
+                    //                double meany = JSci.maths.ArrayMath.mean(y);
+                    for (int i = 0; i < y2.size(); i++) {
+                        y[i] -= meany;
+                        y[i] /= stdevy;
+                        xcopy[i] = x2.get(i) - meanx;
+                        xcopy[i] /= stdevx;
+                    }
+                    
+                    meany = 0;
+                    double meanxCopy = 0;
+                    //                meany = JSci.maths.ArrayMath.mean(y);
+                    //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
+                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
+                    if (determinefoldchange) {
+                        determineFoldchange(x2.toArray(), y2.toArray(), r, d, p);
+                    }
+                    r.zscores[d][p] = zScore;
+                    r.correlations[d][p] = correlation;
+                } else {
+                    // Ususally if the genotype variance is very low
+                    System.err.println("Error! correlation invalid: " + correlation + "; genotype variance = " + varianceX + "; expression variance = " + varianceY);
+                    r.zscores[d][p] = Double.NaN;
+                    r.correlations[d][p] = Double.NaN;
+                    //System.exit(-1);
+                }
+            }
+        }
+    }
+    
 
     private void ploteQTL(WorkPackage wp, int p) {
         m_eQTLPlotter.draw(wp, p);

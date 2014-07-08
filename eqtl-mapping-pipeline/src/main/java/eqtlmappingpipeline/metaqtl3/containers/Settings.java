@@ -29,7 +29,7 @@ import umcg.genetica.io.trityper.util.ChrAnnotation;
 public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     
     public enum TwoPartModelMode {
-        BOTH, CONTINUES, BINARY
+        CONTINUES, BINARY
     };
 
     // Output
@@ -218,15 +218,11 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
             twoPartModel = config.getString("defaults.analysis.TwoPartModel");
         } catch (Exception e) {
         }
-        if (twoPartModel != null) {
-            if (twoPartModel.toLowerCase().equals("both")) {
-                performTwoPartModel = TwoPartModelMode.BOTH;
-            } else if (twoPartModel.toLowerCase().equals("continues")) {
+        if (twoPartModel != null && !twoPartModel.equals("")) {
+            if (twoPartModel.toLowerCase().equals("continues")) {
                 performTwoPartModel = TwoPartModelMode.CONTINUES;
             } else if (twoPartModel.toLowerCase().equals("binary")) {
                 performTwoPartModel = TwoPartModelMode.BINARY;
-            } else {
-                twoPartModel=null;
             }
         }
 
