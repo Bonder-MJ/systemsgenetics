@@ -737,7 +737,6 @@ public class EQTLPlotter {
                 int[] indWGA = currentDataset.getExpressionToGenotypeIdArray();
                 byte[] genotypes = currentSNP.getGenotypes();
                 double[] rawData = currentDataset.getExpressionData().getMatrix()[probe];
-                double[] y = new double[nrSamplesWithData];
 
                 ArrayList<Double> valsAA = new ArrayList<Double>();
                 ArrayList<Double> valsAB = new ArrayList<Double>();
@@ -777,20 +776,31 @@ public class EQTLPlotter {
                         }
                     }
                 }
-
+                
+                double[] y;
                 //Define y-axis data:
                 if (nrSamplesWithData == numSamples) {
                     //All genotypes have been succesfully called, use quick approach:
                     y = rawData;
+                    for (int s = 0; s < numSamples; s++) {
+                        if(y[s] != 0.0d){
+                           y[s] = 1; 
+                        }
+                    }
                 } else {
                     //Not all genotypes have been succesfully called, use slow approach:
+                    y = new double[nrSamplesWithData];
                     itr = 0;
                     for (int s = 0; s < numSamples; s++) {
                         int ind = indWGA[s];
                         if (ind != -1) {
                             int valX = currentSNP.getGenotypes()[ind];
                             if (valX != -1) {
-                                y[itr] = rawData[s];
+                                if(rawData[s] != 0){
+                                   y[itr] = 1.0d;
+                                } else {
+                                    y[itr] = 0.0d;
+                                }
                                 itr++;
                             }
                         }
@@ -801,16 +811,8 @@ public class EQTLPlotter {
                 g2d.setColor(black);
 
                 //Get minimal and maximal expression for this probe:
-                double minExpression = Double.MAX_VALUE;
-                double maxExpression = Double.MIN_VALUE;
-                for (int i = 0; i < y.length; i++) {
-                    if (y[i] < minExpression) {
-                        minExpression = y[i];
-                    }
-                    if (y[i] > maxExpression) {
-                        maxExpression = y[i];
-                    }
-                }
+                double minExpression = 0;
+                double maxExpression = 1;
 
                 //Draw regression line:
                 double[] correlationValues = Regression.getLinearRegressionCoefficients(x, y);
