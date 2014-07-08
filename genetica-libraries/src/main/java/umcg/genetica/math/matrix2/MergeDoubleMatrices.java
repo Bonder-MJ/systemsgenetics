@@ -31,9 +31,7 @@ public class MergeDoubleMatrices {
     public static DoubleMatrixDataset<String, String> mergeMatrixBasedOnColumns(DoubleMatrixDataset<String, String> matrixI, DoubleMatrixDataset<String, String> matrixII, boolean removeOldMatrix) throws Exception {
         HashSet<String> keepColNames1 = new HashSet<String>();
         keepColNames1.addAll(matrixI.getColObjects());
-        HashSet<String> keepColNames2 = new HashSet<String>();
-        keepColNames2.addAll(matrixII.getColObjects());
-        keepColNames1.retainAll(keepColNames2);
+        keepColNames1.retainAll(matrixII.getColObjects());
 
         if (keepColNames1.size() != matrixI.rows() && keepColNames1.size() != matrixI.rows()) {
             if (keepColNames1.size() != matrixI.rows()) {
@@ -58,7 +56,11 @@ public class MergeDoubleMatrices {
         HashSet<String> keepRowNames1 = new HashSet<String>();
         keepRowNames1.addAll(matrixI.getRowObjects());
         keepRowNames1.addAll(matrixII.getRowObjects());
-
+        
+        if (matrixI.rows()+matrixII.rows() != keepRowNames1.size()) {
+            System.out.println("Warning invalid merging. Overlapping column names, these will be neglected");
+        }
+        
         HashSet<String> removeList = new HashSet<String>();
 
         for (String key : keepRowNames1) {
