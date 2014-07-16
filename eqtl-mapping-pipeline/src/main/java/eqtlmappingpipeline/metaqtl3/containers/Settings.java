@@ -337,7 +337,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         }
 
         try {
-            fdrtype = config.getString("defaults.multipletesting.fdrtype", "probe");
+            fdrtype = config.getString("defaults.multipletesting.fdrtype", "full");
             fdrtype = fdrtype.toLowerCase();
             fdrtype = fdrtype.replaceAll("-", "");
             fdrtype = fdrtype.replaceAll("level", "");
@@ -346,8 +346,10 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         if (numPermutations != null) {
             if (fdrtype.equals("gene")) {
                 fdrType = FDRMethod.GENELEVEL;
+                createDotPlot = false;
             } else if (fdrtype.equals("probe")) {
                 fdrType = FDRMethod.PROBELEVEL;
+                createDotPlot = false;
             } else if (fdrtype.equals("snpprobe") || fdrtype.equals("full")) {
                 fdrType = FDRMethod.FULL;
             }
@@ -358,6 +360,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         } catch (Exception e) {
         }
         if (largeFdrFileOut == false) {
+            createDotPlot = false;
             fullFdrOutput = false;
         }
 

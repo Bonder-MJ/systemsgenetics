@@ -62,7 +62,7 @@ class CalculationThread extends Thread {
     private final boolean testSNPsPresentInBothDatasets; 
     private boolean metaAnalyseInteractionTerms = false;
     private boolean metaAnalyseModelCorrelationYHat = false;
-    private DRand randomEngine = new cern.jet.random.tdouble.engine.DRand();
+    private static DRand randomEngine = new cern.jet.random.tdouble.engine.DRand();
 //    private RConnection rConnection;
 
     CalculationThread(int i, LinkedBlockingQueue<WorkPackage> packageQueue, LinkedBlockingQueue<WorkPackage> resultQueue, TriTyperExpressionData[] expressiondata,
@@ -241,9 +241,9 @@ class CalculationThread extends Thread {
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
                             if(m_twoPartModel != null){
-                                testTwoPart(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
+                                testTwoPart(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange, this.m_twoPartModel);
                             } else {
-                                test(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults);
+                                test(d, p, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, covariates, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange);
                             }
                         } else {
                             dsResults.correlations[d][p] = Double.NaN;
@@ -282,9 +282,9 @@ class CalculationThread extends Thread {
                             Integer probeId = m_probeTranslation.get(d, pid);
                             if (probeId != -9) {
                                 if(m_twoPartModel != null){
-                                    testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                                    testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange, this.m_twoPartModel);
                                 } else {
-                                    test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                                    test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange);
                                 }
                             } else {
                                 dsResults.correlations[d][pid] = Double.NaN;
@@ -319,9 +319,9 @@ class CalculationThread extends Thread {
                         Integer probeId = m_probeTranslation.get(d, pid);
                         if (probeId != -9) {
                             if(m_twoPartModel != null){
-                                testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                                testTwoPart(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange, this.m_twoPartModel);
                             } else {
-                                test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults);
+                                test(d, pid, probeId, snpmeancorrectedgenotypes[d], originalgenotypes[d], snpvariances[d], varY[probeId], meanY[probeId], includeExpressionSample[d], samplecount, rawData, null, dsResults, this.currentWP, this.metaAnalyseModelCorrelationYHat, this.metaAnalyseInteractionTerms, this.determinefoldchange);
                             }
                         } else {
                             dsResults.correlations[d][pid] = Double.NaN;
@@ -383,8 +383,8 @@ class CalculationThread extends Thread {
 //        System.out.println("Analyze: "+t1.getTimeDesc());
     }
 
-    private void test(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r) {
-        double[] y = null;
+    protected static void test(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r, WorkPackage wp, boolean metaAnalyseModelCorrelationYHat, boolean metaAnalyseInteractionTerms, boolean determinefoldchange) {
+        final double[] y;
         double[][] covariates = covariateRawData;
         if (x.length != sampleCount) {
             y = new double[x.length];
@@ -401,6 +401,14 @@ class CalculationThread extends Thread {
                 }
             }
             meanY = sum / itr;
+            
+            if(meanY!=0){
+                for(int i = 0; i < y.length; ++i){
+                    y[i] = y[i]-meanY;
+                }
+            }
+            meanY = 0;
+
 
             varianceY = Descriptives.variance(y, meanY);
 
@@ -422,6 +430,18 @@ class CalculationThread extends Thread {
             y = new double[x.length];
             System.arraycopy(rawData[probeId], 0, y, 0, x.length);
         }
+        
+        if(meanY > 0.000000001d || meanY < -0.00000001d){
+            
+            double res = 0;
+            for(double y2 : y){
+                res += y2;
+            }
+            res /= y.length;
+            
+            throw new RuntimeException("Error in eQTL calculation, mean not 0, was specifief as: " + meanY + " and really is: " + res);
+        }
+
 
         if (varianceY == 0) {
             r.zscores[d][p] = Double.NaN;
@@ -599,7 +619,7 @@ class CalculationThread extends Thread {
 //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
                 calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
                 if (determinefoldchange) {
-                    determineFoldchange(originalGenotypes, y, r, d, p);
+                    determineFoldchange(originalGenotypes, y, r, d, p, wp);
                 }
                 r.zscores[d][p] = zScore;
                 r.correlations[d][p] = correlation;
@@ -613,7 +633,7 @@ class CalculationThread extends Thread {
         }
     }
 
-    private void calculateRegressionCoefficients(double[] x, double meanx, double[] y, double meany, Result r, int d, int p) {
+    private static void calculateRegressionCoefficients(double[] x, double meanx, double[] y, double meany, Result r, int d, int p) {
         double beta;
         double alpha;
         double sxx = 0;
@@ -639,7 +659,7 @@ class CalculationThread extends Thread {
         r.se[d][p] = se;
     }
 
-    private void determineFoldchange(double[] genotypes, double[] expression, Result r, int d, int p) {
+    private static void determineFoldchange(double[] genotypes, double[] expression, Result r, int d, int p, WorkPackage wp) {
         int numAA = 0;
         int numBB = 0;
 
@@ -679,7 +699,7 @@ class CalculationThread extends Thread {
             sumAA += Math.abs(min) + 1;
             sumBB += Math.abs(min) + 1;
         }
-        if (currentWP.getFlipSNPAlleles()[d]) {
+        if (wp.getFlipSNPAlleles()[d]) {
 
             r.fc[d][p] = sumAA / sumBB;
         } else {
@@ -768,7 +788,7 @@ class CalculationThread extends Thread {
 
     }
     
-    private void testTwoPart(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r) {
+    private static void testTwoPart(int d, int p, Integer probeId, double[] x, double[] originalGenotypes, double varianceX, double varianceY, double meanY, boolean[] includeExpressionSample, int sampleCount, double[][] rawData, double[][] covariateRawData, Result r, WorkPackage wp, boolean metaAnalyseModelCorrelationYHat, boolean metaAnalyseInteractionTerms, boolean determinefoldchange , TwoPartModelMode twoPartModel) {
         if (covariateRawData != null) {
             throw new UnsupportedOperationException("Two part model does not support covariates yet.");
         }
@@ -786,9 +806,9 @@ class CalculationThread extends Thread {
             }
         }
         
-        if (!containsZero && m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
-            test(d, p, probeId, x, originalGenotypes, varianceX, varianceY, meanY, includeExpressionSample, sampleCount, rawData, covariateRawData, r);
-        } else if (m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
+        if (!containsZero && twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
+            test(d, p, probeId, x, originalGenotypes, varianceX, varianceY, meanY, includeExpressionSample, sampleCount, rawData, covariateRawData, r, wp, metaAnalyseModelCorrelationYHat, metaAnalyseInteractionTerms, determinefoldchange);
+        } else if (twoPartModel.equals(TwoPartModelMode.BINARY)) {
             //Part One 
             double[] y = null;
             
@@ -841,7 +861,7 @@ class CalculationThread extends Thread {
                     //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
                     calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
                     if (determinefoldchange) {
-                        determineFoldchange(originalGenotypes, y, r, d, p);
+                        determineFoldchange(originalGenotypes, y, r, d, p, wp);
                     }
                     r.zscores[d][p] = zScore;
                     r.correlations[d][p] = correlation;
@@ -853,7 +873,7 @@ class CalculationThread extends Thread {
                     //System.exit(-1);
                 }
             }
-        } else if (m_twoPartModel.equals("CONTINUES")) {
+        } else if (twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
             // Part Two normal mapping on selection
 
             ArrayDoubleList y2 = new ArrayDoubleList();
@@ -914,7 +934,7 @@ class CalculationThread extends Thread {
                     //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
                     calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
                     if (determinefoldchange) {
-                        determineFoldchange(x2.toArray(), y2.toArray(), r, d, p);
+                        determineFoldchange(x2.toArray(), y2.toArray(), r, d, p, wp);
                     }
                     r.zscores[d][p] = zScore;
                     r.correlations[d][p] = correlation;
