@@ -829,7 +829,11 @@ class CalculationThread extends Thread {
                 }
             }
             meanY = sum / itr;
-
+            for(int i=0; i<y.length; ++i){
+                y[i]-=meanY;
+            }
+            
+            meanY = 0;
             varianceY = Descriptives.variance(y, meanY);
 
             if (varianceY == 0) {
@@ -845,20 +849,13 @@ class CalculationThread extends Thread {
                 if (correlation >= -1 && correlation <= 1) {
                     double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
                     double[] xcopy = new double[x.length];
-                    double meanx = JSci.maths.ArrayMath.mean(x);
-                    double meany = meanY;
                     //                double meany = JSci.maths.ArrayMath.mean(y);
                     for (int i = 0; i < y.length; i++) {
-                        y[i] -= meany;
                         y[i] /= stdevy;
-                        xcopy[i] = x[i] - meanx;
                         xcopy[i] /= stdevx;
                     }
-                    meany = 0;
-                    double meanxCopy = 0;
-                    //                meany = JSci.maths.ArrayMath.mean(y);
-                    //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
+                    
+                    calculateRegressionCoefficients(xcopy, 0, y, 0, r, d, p);
                     if (determinefoldchange) {
                         determineFoldchange(originalGenotypes, y, r, d, p, wp);
                     }
@@ -896,9 +893,20 @@ class CalculationThread extends Thread {
                     }
                 }
             }
-            System.exit(0);
             double meanX = sumX / itr;
             meanY = sumY / itr;
+            
+            if(meanY > 0.000000001d || meanY < -0.00000001d){
+                for(int i=0; i<y2.size(); ++i){
+                    y2.set(i,y2.get(i)-meanY);
+                }
+            }
+            if(meanX > 0.000000001d || meanX < -0.00000001d){
+                for(int i=0; i<x2.size(); ++i){
+                    x2.set(i,x2.get(i)-meanX);
+                }
+            }
+                        
             varianceY = Descriptives.variance(y2.toArray(), meanY);
             double varianceX2 = Descriptives.variance(x2.toArray(), meanX);
             
@@ -917,23 +925,16 @@ class CalculationThread extends Thread {
 
                 if (correlation >= -1 && correlation <= 1) {
                     double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
-                    double[] xcopy = new double[x2.size()];
-                    double meanx = JSci.maths.ArrayMath.mean(x);
-                    double meany = meanY;
+                    double[] xcopy = x2.toArray();
                     double[] y = y2.toArray();
                     //                double meany = JSci.maths.ArrayMath.mean(y);
                     for (int i = 0; i < y2.size(); i++) {
-                        y[i] -= meany;
                         y[i] /= stdevy;
-                        xcopy[i] = x2.get(i) - meanx;
                         xcopy[i] /= stdevx;
                     }
-                    
-                    meany = 0;
-                    double meanxCopy = 0;
                     //                meany = JSci.maths.ArrayMath.mean(y);
                     //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-                    calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
+                    calculateRegressionCoefficients(xcopy, 0, y, 0, r, d, p);
                     if (determinefoldchange) {
                         determineFoldchange(x2.toArray(), y2.toArray(), r, d, p, wp);
                     }
