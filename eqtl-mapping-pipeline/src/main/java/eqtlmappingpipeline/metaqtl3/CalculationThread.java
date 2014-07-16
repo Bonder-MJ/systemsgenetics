@@ -603,20 +603,17 @@ class CalculationThread extends Thread {
             if (correlation >= -1 && correlation <= 1) {
                 double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
                 double[] xcopy = new double[x.length];
-                double meanx = JSci.maths.ArrayMath.mean(x);
-                double meany = meanY;
+//                double meanx = JSci.maths.ArrayMath.mean(x);
+//                double meany = meanY;
 //                double meany = JSci.maths.ArrayMath.mean(y);
                 for (int i = 0; i < y.length; i++) {
-                    y[i] -= meany;
                     y[i] /= stdevy;
-                    xcopy[i] = x[i] - meanx;
-                    xcopy[i] /= stdevx;
+                    xcopy[i] = x[i] /stdevx;
                 }
-                meany = 0;
-                double meanxCopy = 0;
 //                meany = JSci.maths.ArrayMath.mean(y);
 //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-                calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, r, d, p);
+//                calculateRegressionCoefficients(xcopy, 0, y, 0, r, d, p);
+                calculateRegressionCoefficients(xcopy, y, r, d, p);
                 if (determinefoldchange) {
                     determineFoldchange(originalGenotypes, y, r, d, p, wp);
                 }
@@ -656,6 +653,27 @@ class CalculationThread extends Thread {
         double se = (Math.sqrt((ssxy) / (y.length - 2))) / Math.sqrt(sxx);
         r.beta[d][p] = beta;
         r.se[d][p] = se;
+    }
+    
+    private static void calculateRegressionCoefficients(double[] x, double[] y, Result r, int d, int p) {
+        double beta;
+        double sxx = 0;
+        double sxy = 0;
+
+        for (int i = 0; i < y.length; i++) {
+            sxx += ((x[i]) * (x[i]));
+            sxy += ((y[i]) * (x[i]));
+        }
+
+        beta = sxy / sxx;
+
+        double ssxy = 0;
+        for (int i = 0; i < y.length; i++) {
+            ssxy += ((y[i] - (beta * x[i])) * (y[i] - (beta * x[i])));
+        }
+
+        r.beta[d][p] = beta;
+        r.se[d][p] = Math.sqrt((ssxy/(y.length - 2))/sxx);
     }
 
     private static void determineFoldchange(double[] genotypes, double[] expression, Result r, int d, int p, WorkPackage wp) {
