@@ -348,8 +348,7 @@ class CalculationThread extends Thread {
                     if (pval < m_pvaluePlotThreshold) {
                         if(m_twoPartModel.equals(TwoPartModelMode.BINARY)){
                             m_eQTLPlotter.drawBinary(wp, p);
-                        } else if(m_twoPartModel.equals(TwoPartModelMode.BINARY)) {
-                            System.out.println("Not supported yet.");
+                        } else if(m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
                         } else {
                             m_eQTLPlotter.draw(wp, p);
                         } 
@@ -893,9 +892,11 @@ class CalculationThread extends Thread {
                         sumX += originalGenotypes[s];
                         sumY += rawData[probeId][s];
                         itr++;
+                        System.out.println(originalGenotypes[s]+ "\t"+ rawData[probeId][s]);
                     }
                 }
             }
+            System.exit(0);
             double meanX = sumX / itr;
             meanY = sumY / itr;
             varianceY = Descriptives.variance(y2.toArray(), meanY);
