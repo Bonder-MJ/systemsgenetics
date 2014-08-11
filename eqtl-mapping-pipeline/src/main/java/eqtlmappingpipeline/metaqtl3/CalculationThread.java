@@ -849,9 +849,10 @@ class CalculationThread extends Thread {
             meanY = sum / itr;
             for(int i=0; i<y.length; ++i){
                 y[i]-=meanY;
+                
             }
-            
             meanY = 0;
+            
             varianceY = Descriptives.variance(y, meanY);
 
             if (varianceY == 0) {
@@ -907,7 +908,7 @@ class CalculationThread extends Thread {
                         sumX += originalGenotypes[s];
                         sumY += rawData[probeId][s];
                         itr++;
-                        System.out.println(originalGenotypes[s]+ "\t"+ rawData[probeId][s]);
+//                        System.out.println(originalGenotypes[s]+ "\t"+ rawData[probeId][s]);
                     }
                 }
             }
