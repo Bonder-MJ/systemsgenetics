@@ -680,26 +680,26 @@ class CalculationThread extends Thread {
         r.se[d][p] = se;
     }
     
-    private static void calculateRegressionCoefficients(double[] x, double[] y, Result r, int d, int p) {
-        double beta;
-        double sxx = 0;
-        double sxy = 0;
-
-        for (int i = 0; i < y.length; i++) {
-            sxx += ((x[i]) * (x[i]));
-            sxy += ((y[i]) * (x[i]));
-        }
-
-        beta = sxy / sxx;
-
-        double ssxy = 0;
-        for (int i = 0; i < y.length; i++) {
-            ssxy += ((y[i] - (beta * x[i])) * (y[i] - (beta * x[i])));
-        }
-
-        r.beta[d][p] = beta;
-        r.se[d][p] = Math.sqrt((ssxy/(y.length - 2))/sxx);
-    }
+//    private static void calculateRegressionCoefficients(double[] x, double[] y, Result r, int d, int p) {
+//        double beta;
+//        double sxx = 0;
+//        double sxy = 0;
+//
+//        for (int i = 0; i < y.length; i++) {
+//            sxx += ((x[i]) * (x[i]));
+//            sxy += ((y[i]) * (x[i]));
+//        }
+//
+//        beta = sxy / sxx;
+//
+//        double ssxy = 0;
+//        for (int i = 0; i < y.length; i++) {
+//            ssxy += ((y[i] - (beta * x[i])) * (y[i] - (beta * x[i])));
+//        }
+//
+//        r.beta[d][p] = beta;
+//        r.se[d][p] = Math.sqrt((ssxy/(y.length - 2))/sxx);
+//    }
 
     private static void determineFoldchange(double[] genotypes, double[] expression, Result r, int d, int p, WorkPackage wp) {
         int numAA = 0;
@@ -874,9 +874,10 @@ class CalculationThread extends Thread {
             meanY = sum / itr;
             for(int i=0; i<y.length; ++i){
                 y[i]-=meanY;
+                
             }
-            
             meanY = 0;
+            
             varianceY = Descriptives.variance(y, meanY);
 
             if (varianceY == 0) {
@@ -932,7 +933,7 @@ class CalculationThread extends Thread {
                         sumX += originalGenotypes[s];
                         sumY += rawData[probeId][s];
                         itr++;
-                        System.out.println(originalGenotypes[s]+ "\t"+ rawData[probeId][s]);
+//                        System.out.println(originalGenotypes[s]+ "\t"+ rawData[probeId][s]);
                     }
                 }
             }
