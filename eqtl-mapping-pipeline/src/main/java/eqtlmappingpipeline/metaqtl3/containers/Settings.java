@@ -6,6 +6,7 @@ package eqtlmappingpipeline.metaqtl3.containers;
 
 import eqtlmappingpipeline.Main;
 import eqtlmappingpipeline.metaqtl3.FDR.FDRMethod;
+import gnu.trove.set.hash.THashSet;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     public boolean performEQTLAnalysisOnSNPProbeCombinationSubset;             // Confine to a certain set of probe/snp combinations?
     public Byte confineToSNPsThatMapToChromosome;                              // Confine SNP to be assessed to SNPs mapped on this chromosome
     public boolean expressionDataLoadOnlyProbesThatMapToChromosome = false;    // Only load expression data for probes with a known chromosome mapping
-    public HashSet<String> tsSNPsConfine;                                      // Confine analysis to the SNPs in this hash
+    public HashSet<String> tsSNPsConfine = null;                               // Confine analysis to the SNPs in this hash
     public HashMap<String, HashSet<String>> tsSNPProbeCombinationsConfine;     // Confine analysis to the combinations of SNP and Probes in this hash
     // plots
     public double plotOutputPValueCutOff;                                      // Use this p-value as a cutoff for drawing plots
@@ -71,9 +72,9 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     public ArrayList<TriTyperGeneticalGenomicsDatasetSettings> datasetSettings;
     public String regressOutEQTLEffectFileName;
     public boolean regressOutEQTLEffectsSaveOutput;
-    public Double snpQCCallRateThreshold = 0.95;
-    public Double snpQCHWEThreshold = 0.0001;
-    public Double snpQCMAFThreshold = 0.05;
+    public double snpQCCallRateThreshold = 0.95;
+    public double snpQCHWEThreshold = 0.0001;
+    public double snpQCMAFThreshold = 0.05;
     public Byte confineToProbesThatMapToChromosome;
     public boolean createBinaryOutputFiles;
     public boolean createTEXTOutputFiles;
@@ -91,9 +92,9 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     public boolean snpProbeConfineBasedOnChrPos = false;                       //Snp in snp confine and snp probe confine list are defined as chr:pos instead of snp ID.
     private static final Pattern TAB_PATTERN = Pattern.compile("\\t");
     public boolean permuteCovariates;
-    public Random r;
     public long rSeed = System.currentTimeMillis();
-
+    public Random randomNumberGenerator = new Random(rSeed);
+    
     public Settings() {
     }
 
@@ -306,6 +307,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
 
         if (randomseed != null) {
             rSeed = randomseed;
+            randomNumberGenerator = new Random(rSeed);
         }
 
         // multiple testing
@@ -337,18 +339,21 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         }
 
         try {
-            fdrtype = config.getString("defaults.multipletesting.fdrtype", "full");
+            fdrtype = config.getString("defaults.multipletesting.fdrtype", "all");
             fdrtype = fdrtype.toLowerCase();
             fdrtype = fdrtype.replaceAll("-", "");
             fdrtype = fdrtype.replaceAll("level", "");
         } catch (Exception e) {
         }
-        if (numPermutations != null) {
+        if (fdrtype != null) {
             if (fdrtype.equals("gene")) {
                 fdrType = FDRMethod.GENELEVEL;
                 createDotPlot = false;
             } else if (fdrtype.equals("probe")) {
                 fdrType = FDRMethod.PROBELEVEL;
+                createDotPlot = false;
+            } else if (fdrtype.equals("snp")) {
+                fdrType = FDRMethod.SNPLEVEL;
                 createDotPlot = false;
             } else if (fdrtype.equals("snpprobe") || fdrtype.equals("full")) {
                 fdrType = FDRMethod.FULL;
@@ -379,8 +384,8 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
 
         if (outdir != null) {
             outputReportsDir = outdir;
-            if (!outputReportsDir.endsWith("/")) {
-                outputReportsDir += "/";
+            if (!outputReportsDir.endsWith(Gpio.getFileSeparator())) {
+                outputReportsDir += Gpio.getFileSeparator();
             }
 
             // check if dir exists. if it does not, create it:
@@ -427,8 +432,8 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
 
         if (outputplotdirectory != null) {
             plotOutputDirectory = outputplotdirectory;
-            if (!plotOutputDirectory.endsWith("/")) {
-                plotOutputDirectory += "/";
+            if (!plotOutputDirectory.endsWith(Gpio.getFileSeparator())) {
+                plotOutputDirectory += Gpio.getFileSeparator();
             }
         } else {
             plotOutputDirectory = outdir + "/plots/";
@@ -547,7 +552,7 @@ public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
         if (confineProbe != null && confineProbe.trim().length() > 0 && Gpio.exists(confineProbe)) {
             strConfineProbe = confineProbe;
             TextFile in = new TextFile(confineProbe, TextFile.R);
-            tsProbesConfine = new HashSet<String>();
+            tsProbesConfine = new THashSet<String>();
             String[] data = in.readAsArray();
             for (String d : data) {
                 d = d.trim();

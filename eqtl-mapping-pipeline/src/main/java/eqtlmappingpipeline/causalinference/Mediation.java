@@ -23,8 +23,8 @@ public class Mediation extends IVAnalysis {
 
     public Mediation(String xmlSettingsFile,
             String ingt, String inexp, String inexpplatform, String inexpannot,
-            String gte, String out, int perm, String snpProbeCombinationList) throws IOException, Exception {
-        super(xmlSettingsFile, ingt, inexp, inexpplatform, inexpannot, gte, out, perm, snpProbeCombinationList);
+            String gte, String out, int perm, String snpProbeCombinationList, boolean parametric) throws IOException, Exception {
+        super(xmlSettingsFile, ingt, inexp, inexpplatform, inexpannot, gte, out, perm, snpProbeCombinationList, parametric);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class Mediation extends IVAnalysis {
                     outfile = outDir + m_gg[d].getSettings().name + "_IVAnalysis-RealData.txt";
                 } else {
                     outfile = outDir + m_gg[d].getSettings().name + "_IVAnalysis-PermutationRound-" + perm + ".txt";
-                    m_gg[d].permuteSampleLables(m_settings.r);
+                    m_gg[d].permuteSampleLables(m_settings.randomNumberGenerator);
                 }
                 TextFile out = new TextFile(outfile, TextFile.W);
                 Iterator<Triple<String, String, String>> it = snpProbeCombos.iterator();
@@ -77,7 +77,7 @@ public class Mediation extends IVAnalysis {
                     Integer cisProbeId = m_gg[d].getExpressionData().getProbeToId().get(cisprobe);
                     Integer transProbeId = m_gg[d].getExpressionData().getProbeToId().get(transprobe);
 
-                    if (snpId == -9 || cisProbeId == null || transProbeId == null) {
+                    if (snpId == -9 || cisProbeId == -9 || transProbeId == -9) {
 //                        out.writeln(snp + "\t" + snpId + "\t" + cisprobe + "\t" + cisProbeId + "\t" + null + "\t" + transprobe + "\t" + transProbeId + "\t" + null + "\t" + null + "\t" + null + "\t" + null + "\t" + null + "\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA");
                     } else {
 

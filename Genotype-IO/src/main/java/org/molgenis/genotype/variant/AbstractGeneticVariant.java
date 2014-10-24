@@ -6,6 +6,7 @@ import org.molgenis.genotype.util.ChromosomeComparator;
 import org.molgenis.genotype.util.Ld;
 import org.molgenis.genotype.util.LdCalculator;
 import org.molgenis.genotype.util.LdCalculatorException;
+import org.molgenis.genotype.util.MachR2Calculator;
 
 abstract public class AbstractGeneticVariant implements GeneticVariant {
 
@@ -139,7 +140,7 @@ abstract public class AbstractGeneticVariant implements GeneticVariant {
 
     @Override
     public boolean isMapped() {
-        return !(this.getSequenceName().equals("0") && this.getStartPos() == 0);
+        return !(this.getSequenceName().equals("0") || this.getStartPos() < 0);
     }
 
     @Override
@@ -275,4 +276,9 @@ abstract public class AbstractGeneticVariant implements GeneticVariant {
     public boolean isBiallelic() {
         return this.getVariantAlleles().getAlleleCount() == 2;
     }
+	
+	@Override
+	public double getMachR2() {
+		return MachR2Calculator.calculateMachR2(this.getSampleGenotypeProbilities());
+	}
 }

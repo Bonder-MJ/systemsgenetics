@@ -61,7 +61,7 @@ public class MetaQTL3 {
 
     public MetaQTL3(Settings settings) throws IOException, Exception {
         m_settings = settings;
-        initialize(null, null, null, null, null, null, null, null, null, null, null, true, true, 0, true, false, null, null, null, null, null, false, false, null);
+        initialize(null, null, null, null, null, null, null, null, null, null, null, true, true, 0, true, false, null, null, null, null, null, false, false, null, null);
     }
 
     public void setOutputPlotThreshold(double d) {
@@ -73,7 +73,7 @@ public class MetaQTL3 {
     public void initialize(String xmlSettingsFile, String texttoreplace, String texttoreplacewith, String texttoreplace2, String texttoreplace2with,
             String ingt, String inexp, String inexpplatform, String inexpannot,
             String gte, String out, boolean cis, boolean trans, int perm, boolean textout, boolean binout, String snpfile, Integer threads, Integer maxNrResults,
-            String regressouteqtls, String snpprobecombofile, boolean skipdotplot, boolean skipqqplot, Long rseed) throws IOException, Exception {
+            String regressouteqtls, String snpprobecombofile, boolean skipdotplot, boolean skipqqplot, Long rseed, Double maf) throws IOException, Exception {
 
         if (m_settings == null && xmlSettingsFile == null && ingt != null) {
 
@@ -102,6 +102,7 @@ public class MetaQTL3 {
             }
 
             m_settings = new Settings();
+
             TriTyperGeneticalGenomicsDatasetSettings s = new TriTyperGeneticalGenomicsDatasetSettings();
 
             s.name = "Dataset";
@@ -129,6 +130,10 @@ public class MetaQTL3 {
             m_settings.cisAnalysis = cis;
             m_settings.transAnalysis = trans;
             m_settings.nrPermutationsFDR = perm;
+            if(maf!=null && maf>0.0d ){
+                m_settings.snpQCMAFThreshold = maf;
+            }
+            
             if (!out.endsWith("/")) {
                 out += "/";
             }
@@ -152,13 +157,15 @@ public class MetaQTL3 {
             m_settings.createBinaryOutputFiles = binout;
             if (maxNrResults != null && maxNrResults > 0) {
                 m_settings.maxNrMostSignificantEQTLs = maxNrResults;
+
             }
-            
-            m_settings.createDotPlot =  !skipdotplot;
-            m_settings.createQQPlot =  !skipqqplot;
-            
-            if(rseed!=null){
+
+            m_settings.createDotPlot = !skipdotplot;
+            m_settings.createQQPlot = !skipqqplot;
+
+            if (rseed != null) {
                 m_settings.rSeed = rseed;
+                m_settings.randomNumberGenerator = new Random(m_settings.rSeed);
             }
 
         } else if (m_settings == null && xmlSettingsFile != null) {
@@ -180,7 +187,7 @@ public class MetaQTL3 {
             m_settings.cisAnalysis = true;
         }
 
-        m_settings.r = new Random(m_settings.rSeed);
+//        m_settings.randomNumberGenerator = new Random(m_settings.rSeed);
         m_settings.writeSettingsToDisk();
 
         int numDatasets = m_settings.datasetSettings.size();
@@ -204,9 +211,11 @@ public class MetaQTL3 {
             dataHasCovariates = true;
         }
 
-        List<String> pathwayNames = new ArrayList<String>();
-        List<List<String>> ensgsInPathways = new ArrayList<List<String>>();
+        List<String> pathwayNames;
+        List<List<String>> ensgsInPathways;
         if (m_settings.pathwayDefinition != null) {
+            pathwayNames = new ArrayList<String>();
+            ensgsInPathways = new ArrayList<List<String>>();
             if (Gpio.exists(m_settings.pathwayDefinition)) {
                 TextFile tf = new TextFile(m_settings.pathwayDefinition, TextFile.R);
                 String line;
@@ -302,11 +311,11 @@ public class MetaQTL3 {
         createProbeList();
 
         // create WorkPackage objects
-        long maxNrOfTests = determineSNPProbeCombinations();
-
-        if (m_settings.maxNrMostSignificantEQTLs > maxNrOfTests) {
-            m_settings.maxNrMostSignificantEQTLs = (int) maxNrOfTests;
-        }
+        determineSNPProbeCombinations();
+//
+//        if (m_settings.maxNrMostSignificantEQTLs != maxNrOfTests) {
+//            m_settings.maxNrMostSignificantEQTLs = (int) maxNrOfTests;
+//        }
 
         if (m_workPackages == null || m_workPackages.length == 0) {
             System.err.println("Error: No work detected");
@@ -604,7 +613,7 @@ public class MetaQTL3 {
             String mappingOutput = "";
             for (int d = 0; d < m_gg.length; d++) {
                 Integer probeId = m_gg[d].getExpressionData().getProbeToId().get(probe);
-                if (probeId != null) {
+                if (probeId != -9) {
                     presence++;
                     if (chr == null) {
                         chr = m_gg[d].getExpressionData().getChr()[probeId];
@@ -709,7 +718,7 @@ public class MetaQTL3 {
             String probe = m_probeList[p];
             for (int d = 0; d < m_gg.length; d++) {
                 Integer tmp = m_gg[d].getExpressionData().getProbeToId().get(probe);
-                if (tmp == null) {
+                if (tmp == -9) {
                     m_probeTranslationTable.setQuick(d, p, -9);
                 } else {
                     m_probeTranslationTable.setQuick(d, p, tmp);
@@ -775,9 +784,9 @@ public class MetaQTL3 {
 
                 for (int d = 0; d < m_gg.length; d++) {
 //                    int[] indWGAOriginal = m_gg[d].getExpressionToGenotypeIdArray();
-                    m_gg[d].permuteSampleLables(m_settings.r);
-                    if(m_settings.permuteCovariates){
-                        m_gg[d].permuteCovariates(m_settings.r);
+                    m_gg[d].permuteSampleLables(m_settings.randomNumberGenerator);
+                    if (m_settings.permuteCovariates) {
+                        m_gg[d].permuteCovariates(m_settings.randomNumberGenerator);
                     }
 
 //                    int[] indWGAPerm = m_gg[d].getExpressionToGenotypeIdArray();
@@ -915,7 +924,6 @@ public class MetaQTL3 {
     }
 
     protected long determineSNPProbeCombinations() throws IOException {
-
         String loc = m_settings.outputReportsDir + "excludedSNPsBySNPProbeCombinationFilter.txt.gz";
         TextFile excludedSNPs = new TextFile(loc, TextFile.W);
         long maxNrTestsToPerform = 0;
@@ -966,8 +974,8 @@ public class MetaQTL3 {
 
         HashMap<String, Integer> probeNameToId = null;
         if (m_settings.tsSNPProbeCombinationsConfine != null) {
-            m_settings.transAnalysis = false;
             m_settings.cisAnalysis = true;
+            m_settings.transAnalysis = false;
             for (int i = 0; i < m_gg.length; i++) {
                 m_gg[i].getSettings().cisAnalysis = true;
                 m_gg[i].getSettings().transAnalysis = false;
@@ -1120,6 +1128,11 @@ public class MetaQTL3 {
 
         System.out.println("The maximum number of SNPs to test: " + m_workPackages.length);
         System.out.println("The maximum number of SNP-Probe combinations: " + maxNrTestsToPerform);
+
+        if (m_settings.maxNrMostSignificantEQTLs > maxNrTestsToPerform) {
+            m_settings.maxNrMostSignificantEQTLs = (int) maxNrTestsToPerform;
+        }
+
         return (maxNrTestsToPerform);
     }
 
@@ -1155,9 +1168,9 @@ public class MetaQTL3 {
         } else if (!m_settings.cisAnalysis && m_settings.transAnalysis) {
             System.out.println("- trans analysis");
         }
-        if(m_settings.metaAnalyseInteractionTerms){
+        if (m_settings.metaAnalyseInteractionTerms) {
             System.out.println("- interaction analysis");
-            if(!m_settings.performParametricAnalysis){
+            if (!m_settings.performParametricAnalysis) {
                 System.out.println("- WARNING: running interaction model on non-parametric data!");
             }
         }

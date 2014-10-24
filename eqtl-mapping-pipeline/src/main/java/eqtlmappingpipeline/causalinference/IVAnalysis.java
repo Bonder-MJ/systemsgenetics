@@ -36,7 +36,7 @@ public class IVAnalysis {
 
     public IVAnalysis(String xmlSettingsFile,
             String ingt, String inexp, String inexpplatform, String inexpannot,
-            String gte, String out, int perm, String snpProbeCombinationList) throws IOException, Exception {
+            String gte, String out, int perm, String snpProbeCombinationList, boolean parametric) throws IOException, Exception {
 
         if (xmlSettingsFile == null && (ingt == null || inexp == null)) {
             throw new IllegalArgumentException("Supply settingsfile for IV Analysis");
@@ -51,7 +51,7 @@ public class IVAnalysis {
             throw new IllegalArgumentException("SNP Probe combination file is empty!");
         }
 
-        initializeDatasets(xmlSettingsFile, ingt, inexp, inexpplatform, inexpannot, gte, out, perm);
+        initializeDatasets(xmlSettingsFile, ingt, inexp, inexpplatform, inexpannot, gte, out, perm, parametric);
 
         if (!out.endsWith("/")) {
             out += "/";
@@ -80,7 +80,7 @@ public class IVAnalysis {
 
     private void initializeDatasets(String xmlSettingsFile,
             String ingt, String inexp, String inexpplatform, String inexpannot,
-            String gte, String out, int perm) throws IOException, Exception {
+            String gte, String out, int perm, boolean parametric) throws IOException, Exception {
 
 
         if (m_settings == null && xmlSettingsFile == null && ingt != null) {
@@ -102,6 +102,8 @@ public class IVAnalysis {
             if (out == null || out.trim().length() == 0) {
                 System.err.println("ERROR: you did not specify an output directory.");
                 settingsOk = false;
+            } else if (!out.endsWith("/")) {
+                out += "/";
             }
 
             if (!settingsOk) {
@@ -121,6 +123,11 @@ public class IVAnalysis {
             s.cisAnalysis = true;
             s.transAnalysis = true;
 
+            if (parametric) {
+                System.out.println("Running parametric analysis.");
+                m_settings.performParametricAnalysis = true;
+            }
+
             m_settings.cisAnalysis = true;
             m_settings.transAnalysis = true;
 
@@ -137,13 +144,10 @@ public class IVAnalysis {
             m_settings.cisAnalysis = true;
             m_settings.transAnalysis = true;
             m_settings.nrPermutationsFDR = perm;
-            if (!out.endsWith("/")) {
-                out += "/";
-            }
+
             if (!Gpio.exists(out)) {
                 Gpio.createDir(out);
             }
-
 
             m_settings.outputReportsDir = out;
             m_settings.createTEXTOutputFiles = true;
@@ -199,12 +203,12 @@ public class IVAnalysis {
             int[] indWGA = m_gg[d].getExpressionToGenotypeIdArray();
 
             for (int perm = 0; perm < m_settings.nrPermutationsFDR + 1; perm++) {
-                String outfile = null;
+                String outfile;
                 if (perm == 0) {
                     outfile = outDir + m_gg[d].getSettings().name + "_IVAnalysis-RealData.txt";
                 } else {
                     outfile = outDir + m_gg[d].getSettings().name + "_IVAnalysis-PermutationRound-" + perm + ".txt";
-                    m_gg[d].permuteSampleLables(m_settings.r);
+                    m_gg[d].permuteSampleLables(m_settings.randomNumberGenerator);
                 }
                 TextFile out = new TextFile(outfile, TextFile.W);
                 Iterator<Triple<String, String, String>> it = snpProbeCombos.iterator();
@@ -235,7 +239,7 @@ public class IVAnalysis {
                     Integer cisProbeId = m_gg[d].getExpressionData().getProbeToId().get(cisprobe);
                     Integer transProbeId = m_gg[d].getExpressionData().getProbeToId().get(transprobe);
 
-                    if (snpId == -9 || cisProbeId == null || transProbeId == null) {
+                    if (snpId == -9 || cisProbeId == -9 || transProbeId == -9) {
 //                        out.writeln(snp + "\t" + snpId + "\t" + cisprobe + "\t" + cisProbeId + "\t" + null + "\t" + transprobe + "\t" + transProbeId + "\t" + null + "\t" + null + "\t" + null + "\t" + null + "\t" + null + "\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA\tNA");
                     } else {
 
@@ -377,7 +381,6 @@ public class IVAnalysis {
                                 + "\t" + result[2]);
                         snpObj.clearGenotypes();
                     }
-
 
                     if (it.hasNext()) {
                         next = it.next();

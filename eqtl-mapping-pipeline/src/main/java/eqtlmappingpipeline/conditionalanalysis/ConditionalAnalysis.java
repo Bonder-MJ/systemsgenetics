@@ -5,7 +5,10 @@
 package eqtlmappingpipeline.conditionalanalysis;
 
 import eqtlmappingpipeline.metaqtl3.EQTLRegression;
+import eqtlmappingpipeline.metaqtl3.FDR;
 import eqtlmappingpipeline.metaqtl3.MetaQTL3;
+import gnu.trove.set.hash.THashSet;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -21,7 +24,7 @@ import umcg.genetica.io.trityper.SNP;
 import umcg.genetica.io.trityper.SNPLoader;
 import umcg.genetica.io.trityper.TriTyperGeneticalGenomicsDataset;
 import umcg.genetica.io.trityper.TriTyperGeneticalGenomicsDatasetSettings;
-import umcg.genetica.io.trityper.eQTLTextFile;
+import umcg.genetica.io.trityper.QTLTextFile;
 import umcg.genetica.io.trityper.util.ChrAnnotation;
 import umcg.genetica.io.trityper.util.DetermineLD;
 import umcg.genetica.text.Strings;
@@ -43,24 +46,23 @@ public class ConditionalAnalysis extends MetaQTL3 {
             String ingt, String inexp, String inexpplatform, String inexpannot, String gte,
             String out, boolean cis, boolean trans, int perm, boolean textout, boolean binout, String snpfile, Integer threads) throws IOException, Exception {
 
-
-
-        initialize(xmlSettingsFile, texttoreplace, texttoreplacewith, null, null, ingt, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, null, null, null, true, true, null);
+        initialize(xmlSettingsFile, texttoreplace, texttoreplacewith, null, null, ingt, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, null, null, null, true, true, null, null);
         double fdrthreshold = m_settings.fdrCutOff;
+        
         m_settings.provideBetasAndStandardErrors = true;
         m_settings.provideFoldChangeData = true;
         String origOutputDir = m_settings.outputReportsDir;
-        m_settings.outputReportsDir = origOutputDir + "/SNP-Initial/";
-        m_settings.plotOutputDirectory = origOutputDir + "/SNP-Initial/plots/";
+        m_settings.outputReportsDir = origOutputDir + "SNP-Initial" + Gpio.getFileSeparator();
+        m_settings.plotOutputDirectory = origOutputDir + "SNP-Initial" + Gpio.getFileSeparator() + "plots" + Gpio.getFileSeparator();
         Gpio.createDir(m_settings.plotOutputDirectory);
         Gpio.createDir(m_settings.outputReportsDir);
 
         String[] gzfiles = Gpio.getListOfFiles(origOutputDir, "gz");
         for (String filename : gzfiles) {
-            String f = filename.replace(origOutputDir, "");
+            File file = new File(filename);
+            String f = file.getName();
             Gpio.moveFile(filename, m_settings.outputReportsDir + f);
         }
-
 
         System.out.println(m_settings.outputReportsDir + " is used for output");
 
@@ -72,9 +74,26 @@ public class ConditionalAnalysis extends MetaQTL3 {
         HashSet<String> tsSNPConfine = m_settings.tsSNPsConfine;
 
         // take the significant eQTL Probes
-        eQTLTextFile etf = new eQTLTextFile(origOutputDir + "/SNP-Initial/eQTLsFDR" + fdrthreshold + "-ProbeLevel.txt", eQTLTextFile.R);
+        String fdrSignificantFile = "eQTLsFDR" + fdrthreshold + "-ProbeLevel.txt";
+        String fdrAllFile = "eQTLsFDR-ProbeLevel.txt.gz";
+
+        FDR.FDRMethod fdrType = m_settings.fdrType;
+        if (fdrType.equals(FDR.FDRMethod.GENELEVEL)) {
+            fdrSignificantFile = "eQTLsFDR" + fdrthreshold + "-GeneLevel.txt";
+            fdrAllFile = "eQTLsFDR-GeneLevel.txt.gz";
+        } else if (fdrType.equals(FDR.FDRMethod.ALL)) {
+            fdrSignificantFile = "eQTLsFDR" + fdrthreshold + "-ProbeLevel.txt";
+            fdrAllFile = "eQTLsFDR-ProbeLevel.txt.gz";
+        } else if (fdrType.equals(FDR.FDRMethod.FULL)) {
+            fdrSignificantFile = "eQTLsFDR" + fdrthreshold + ".txt";
+            fdrAllFile = "eQTLsFDR.txt.gz";
+        }
+
+        QTLTextFile etf = new QTLTextFile(origOutputDir + "/SNP-Initial/" + fdrSignificantFile, QTLTextFile.R);
         EQTL[] eQTLsSNPsUnconditional = etf.read();
         etf.close();
+
+        System.out.println("Loaded: " + eQTLsSNPsUnconditional.length + " eQTL from " + origOutputDir + "/SNP-Initial/" + fdrSignificantFile);
 
         // run the eQTL analysis over the probes -- > get strongest effect per probe
         m_settings.outputReportsDir = origOutputDir + "/Probe-Initial/";
@@ -82,7 +101,7 @@ public class ConditionalAnalysis extends MetaQTL3 {
         Gpio.createDir(m_settings.outputReportsDir);
         Gpio.createDir(m_settings.plotOutputDirectory);
         m_settings.tsSNPsConfine = null;
-        m_settings.tsProbesConfine = new HashSet<String>();
+        m_settings.tsProbesConfine = new THashSet<String>();
 
         HashMap<String, HashSet<String>> esnpProbePairs = new HashMap<String, HashSet<String>>();
         HashMap<String, HashSet<String>> gsnpProbePairs = new HashMap<String, HashSet<String>>();
@@ -106,12 +125,11 @@ public class ConditionalAnalysis extends MetaQTL3 {
             mapEQTLs();
         }
 
-        etf = new eQTLTextFile(origOutputDir + "/Probe-Initial/eQTLsFDR-ProbeLevel.txt.gz", eQTLTextFile.R);
+        etf = new QTLTextFile(origOutputDir + "/Probe-Initial/" + fdrAllFile, QTLTextFile.R);
         EQTL[] eQTLsProbesUnconditional = etf.read();
         etf.close();
 
         HashSet<String> eSNPsConfine = new HashSet<String>();
-
 
         HashMap<String, EQTL> probeeQTLMap = new HashMap<String, EQTL>();
         for (EQTL e : eQTLsProbesUnconditional) {
@@ -127,10 +145,7 @@ public class ConditionalAnalysis extends MetaQTL3 {
             }
         }
 
-
         //eQTLsProbesUnconditional
-
-
         // run conditional analysis: test only SNP/Probe pairs, condition on top probe effect
         m_settings.outputReportsDir = origOutputDir + "/SNPs-Conditional/";
         m_settings.plotOutputDirectory = origOutputDir + "/SNPs-Conditional/plots/";
@@ -148,7 +163,6 @@ public class ConditionalAnalysis extends MetaQTL3 {
         EQTL[] eQTLsToRegressArr = eQTLsToRegress.toArray(new EQTL[0]);
 
 //        m_settings.regressOutEQTLEffectFileName = origOutputDir + "/Probe-Initial/eQTLProbesFDR" + fdrthreshold + "-ProbeLevel.txt";
-
         m_settings.tsSNPsConfine = tsSNPConfine;
         m_settings.tsSNPProbeCombinationsConfine = gsnpProbePairs;
         m_settings.performEQTLAnalysisOnSNPProbeCombinationSubset = true;
@@ -185,14 +199,13 @@ public class ConditionalAnalysis extends MetaQTL3 {
         System.out.println("Done with eQTL mappings.. Now summarizing results.");
 
         // now summarize the results in some clever way.
-        HashMap<Pair<String, String>, Double> fdrSNPsConditional = readFDRFile(origOutputDir + "/SNPs-Conditional/eQTLsFDR-ProbeLevel.txt.gz");
-        HashMap<Pair<String, String>, Double> fdrProbesConditional = readFDRFile(origOutputDir + "/Probes-Conditional/eQTLsFDR-ProbeLevel.txt.gz");
-        HashMap<Pair<String, String>, EQTL> snpConditionaleQTLMap = readEQTLFile(origOutputDir + "/SNPs-Conditional/eQTLsFDR-ProbeLevel.txt.gz");
-        HashMap<Pair<String, String>, EQTL> probeConditionaleQTLMap = readEQTLFile(origOutputDir + "/Probes-Conditional/eQTLsFDR-ProbeLevel.txt.gz");
+        HashMap<Pair<String, String>, Double> fdrSNPsConditional = readFDRFile(origOutputDir + "/SNPs-Conditional/"+fdrAllFile);
+        HashMap<Pair<String, String>, Double> fdrProbesConditional = readFDRFile(origOutputDir + "/Probes-Conditional/"+fdrAllFile);
+        HashMap<Pair<String, String>, EQTL> snpConditionaleQTLMap = readEQTLFile(origOutputDir + "/SNPs-Conditional/"+fdrAllFile);
+        HashMap<Pair<String, String>, EQTL> probeConditionaleQTLMap = readEQTLFile(origOutputDir + "/Probes-Conditional/"+fdrAllFile);
 
 //        HashMap<Pair<String, String>, Double> fdrSNPsConditional = readFDRFile(origOutputDir + "/SNPs-Conditional/eQTLsFDR.txt.gz");
 //        HashMap<Pair<String, String>, Double> fdrSNPsConditional = readFDRFile(origOutputDir + "/SNPs-Conditional/eQTLsFDR.txt.gz");
-
         DetermineLD ld = new DetermineLD();
 
         TextFile outfile = new TextFile(origOutputDir + "/ConditionalAnalysis.txt", TextFile.W);
@@ -213,15 +226,12 @@ public class ConditionalAnalysis extends MetaQTL3 {
             loaders[d] = m_gg[d].getGenotypeData().createSNPLoader();
         }
 
-
-
         for (EQTL snpUnconditionalEQTL : eQTLsSNPsUnconditional) {
             EQTL probeunconditionaleqtl = probeeQTLMap.get(snpUnconditionalEQTL.getProbe());
             if (probeunconditionaleqtl == null) {
                 System.err.println("ERROR: probe " + snpUnconditionalEQTL.getProbe() + " was not tested in probe-unconditional analysis.");
                 System.exit(0);
             }
-
 
             Pair<String, String> gSNPPair = new Pair<String, String>(snpUnconditionalEQTL.getRsName(), snpUnconditionalEQTL.getProbe());
             Pair<String, String> eSNPPair = new Pair<String, String>(probeunconditionaleqtl.getRsName(), probeunconditionaleqtl.getProbe());
@@ -257,7 +267,7 @@ public class ConditionalAnalysis extends MetaQTL3 {
                             loaders[ds].loadGenotypes(esnpobj);
                             double r2 = ld.getRSquared(gsnpobj, esnpobj, d.getGenotypeData(), DetermineLD.RETURN_R_SQUARED, DetermineLD.INCLUDE_CASES_AND_CONTROLS, false);
                             double dprime = ld.getRSquared(gsnpobj, esnpobj, d.getGenotypeData(), DetermineLD.RETURN_D_PRIME, DetermineLD.INCLUDE_CASES_AND_CONTROLS, false);
-                            ldStrArr[ds] = "" + r2 + ", "+dprime;
+                            ldStrArr[ds] = "" + r2 + ", " + dprime;
                         }
                         gsnpobj.clearGenotypes();
                         esnpobj.clearGenotypes();
@@ -298,7 +308,6 @@ public class ConditionalAnalysis extends MetaQTL3 {
             String probeconditionalbeta = "-";
             String probeconditionalfc = "-";
             String probeconditionalfdr = "-";
-
 
             if (snpconditionaleqtl != null) {
                 snpconditionalpval = "" + snpconditionaleqtl.getPvalue();
@@ -366,12 +375,13 @@ public class ConditionalAnalysis extends MetaQTL3 {
             m_gg[i] = new TriTyperGeneticalGenomicsDataset(m_settings.datasetSettings.get(i));
         }
 
-
         for (int i = 0; i < numDatasets; i++) {
             if (!m_settings.performParametricAnalysis) {
 
                 m_gg[i].getExpressionData().rankAllExpressionData(m_settings.equalRankForTies);
             }
+            m_gg[i].getExpressionData().calcAndSubtractMean();
+            m_gg[i].getExpressionData().calcMeanAndVariance();
             numAvailableInds += m_gg[i].getExpressionToGenotypeIdArray().length;
 
         }
@@ -585,13 +595,13 @@ public class ConditionalAnalysis extends MetaQTL3 {
             e.probe = elems[4];
             e.probechr = elems[5];
             e.probechrpos = elems[6];
-            e.alleleAssessed = elems[eQTLTextFile.ASESSEDALLELE];
-            e.alleles = elems[eQTLTextFile.ASESSEDALLELE - 1];
-            e.samplesize = elems[eQTLTextFile.DATASETSIZE];
-            e.metab = elems[eQTLTextFile.METAB];
-            e.metaz = elems[eQTLTextFile.METAZ];
-            e.b = elems[eQTLTextFile.DATASETB];
-            e.hugo = elems[eQTLTextFile.HUGO];
+            e.alleleAssessed = elems[QTLTextFile.ASESSEDALLELE];
+            e.alleles = elems[QTLTextFile.ASESSEDALLELE - 1];
+            e.samplesize = elems[QTLTextFile.DATASETSIZE];
+            e.metab = elems[QTLTextFile.METAB];
+            e.metaz = elems[QTLTextFile.METAZ];
+            e.b = elems[QTLTextFile.DATASETB];
+            e.hugo = elems[QTLTextFile.HUGO];
             e.FDR = elems[elems.length - 1];
             output.add(e);
 
@@ -644,9 +654,9 @@ public class ConditionalAnalysis extends MetaQTL3 {
                     e.setFC(elems[20]);
                 }
             }
-            e.setZscore(Double.parseDouble(elems[eQTLTextFile.METAZ]));
-            e.setMetaBeta(elems[eQTLTextFile.METAB]);
-            e.setBeta(elems[eQTLTextFile.DATASETB]);
+            e.setZscore(Double.parseDouble(elems[QTLTextFile.METAZ]));
+            e.setMetaBeta(elems[QTLTextFile.METAB]);
+            e.setBeta(elems[QTLTextFile.DATASETB]);
 
             output.put(new Pair<String, String>(elems[1], elems[4]), e);
             elems = efile.readLineElems(TextFile.tab);

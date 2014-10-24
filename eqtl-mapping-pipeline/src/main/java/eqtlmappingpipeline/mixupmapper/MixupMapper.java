@@ -55,7 +55,7 @@ public class MixupMapper extends MetaQTL3 {
             System.out.println("Could not find eQTL file. Will therefore perform eQTL mapping first.");
 
             out = initialOutputdir + "Cis-eQTLs/";
-            initialize(xmlSettingsFile, texttoreplace, texttoreplacewith, null, null, ingt, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, maxNrResults, regressouteqtls, snpprobecombofile, true, true, null);
+            initialize(xmlSettingsFile, texttoreplace, texttoreplacewith, null, null, ingt, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, maxNrResults, regressouteqtls, snpprobecombofile, true, true, null, 0.05d);
             mapEQTLs();
             inputeQTLs = m_settings.outputReportsDir + "eQTLProbesFDR0.05.txt";
 
@@ -140,7 +140,7 @@ public class MixupMapper extends MetaQTL3 {
                     String g = gtelems[0];
 
                     Integer gId = genotypeData.getIndividualId(g);
-                    if (gId != null && genotypeData.getIsIncluded()[gId]) {
+                    if (gId != -9 && genotypeData.getIsIncluded()[gId]) {
                         String t = gtelems[1];
 
                         if (tInds.contains(t)) {
@@ -170,7 +170,7 @@ public class MixupMapper extends MetaQTL3 {
         } else {
             for (String ind : genotypeSamples) {
                 Integer gId = genotypeData.getIndividualId(ind);
-                if (gId != null && genotypeData.getIsIncluded()[gId]) {
+                if (gId != -9 && genotypeData.getIsIncluded()[gId]) {
                     if (traitData.hashCols.get(ind) != null) {
                         if (genotypeToTrait.get(ind) == null) {
                             genotypeToTrait.put(ind, ind);

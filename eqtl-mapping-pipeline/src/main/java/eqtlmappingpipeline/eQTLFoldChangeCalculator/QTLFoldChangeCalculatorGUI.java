@@ -10,9 +10,9 @@ import umcg.genetica.console.ConsoleGUIElems;
  *
  * @author harmjan
  */
-public class eQTLFoldChangeCalculatorGUI {
+public class QTLFoldChangeCalculatorGUI {
 
-    public eQTLFoldChangeCalculatorGUI(String[] args) {
+    public QTLFoldChangeCalculatorGUI(String[] args) {
 
         String settingsfile = null;
         String settingstexttoreplace = null;
@@ -32,6 +32,7 @@ public class eQTLFoldChangeCalculatorGUI {
         boolean textout = false;
         boolean binout = false;
         String eqtlfile = null;
+        Double maf = null;
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
@@ -71,6 +72,13 @@ public class eQTLFoldChangeCalculatorGUI {
                 snpfile = val;
             } else if (arg.equals("--eqtls")) {
                 eqtlfile = val;
+            } else if (arg.equals(
+                    "--maf")) {
+                try {
+                    maf = Double.parseDouble(val);
+                } catch (NumberFormatException e) {
+                    System.out.println("Please supply an integer for --perm");
+                }
             } else if (arg.equals("--perm")) {
                 try {
                     perm = Integer.parseInt(val);
@@ -92,11 +100,11 @@ public class eQTLFoldChangeCalculatorGUI {
                 System.out.println("ERROR: Please supply settings file (--settings settings.xml) or --in and --out");
                 printUsage();
             } else {
-                eQTLFoldChangeCalculator m = new eQTLFoldChangeCalculator();
+                QTLFoldChangeCalculator m = new QTLFoldChangeCalculator();
                 if (!binout && !textout) {
                     textout = true;
                 }
-                m.initialize(settingsfile, settingstexttoreplace, settingstexttoreplacewith, null, null, in, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, null, null, null, true, true, null);
+                m.initialize(settingsfile, settingstexttoreplace, settingstexttoreplacewith, null, null, in, inexp, inexpplatform, inexpannot, gte, out, cis, trans, perm, textout, binout, snpfile, threads, null, null, null, true, true, null, maf);
                 m.calculateFoldChanges(eqtlfile);
             }
         } catch (Exception e) {

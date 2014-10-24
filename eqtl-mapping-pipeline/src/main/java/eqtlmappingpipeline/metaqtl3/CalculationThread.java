@@ -405,9 +405,8 @@ class CalculationThread extends Thread {
                 for(int i = 0; i < y.length; ++i){
                     y[i] = y[i]-meanY;
                 }
+                meanY = 0;
             }
-            meanY = 0;
-
 
             varianceY = Descriptives.variance(y, meanY);
 
@@ -429,8 +428,8 @@ class CalculationThread extends Thread {
             y = new double[x.length];
             System.arraycopy(rawData[probeId], 0, y, 0, x.length);
         }
-        
-        if(meanY > 0.000000001d || meanY < -0.00000001d){
+        double meanX = JSci.maths.ArrayMath.mean(x);
+        if(meanY > 0.000000001d || meanY < -0.00000001d || meanX > 0.000000001d || meanX < -0.00000001d){
             
             double res = 0;
             for(double y2 : y){
@@ -438,7 +437,13 @@ class CalculationThread extends Thread {
             }
             res /= y.length;
             
-            throw new RuntimeException("Error in eQTL calculation, mean not 0, was specifief as: " + meanY + " and really is: " + res);
+            double res2 = 0;
+            for(double x2 : x){
+                res2 += x2;
+            }
+            res2 /= x.length;
+            
+            throw new RuntimeException("Error in eQTL calculation, mean of X or Y was not 0, specified mean y: " + meanY + " and really is: " + res+", specifief mean x: " + meanX + " and really is: " + res2);
         }
 
 
@@ -538,8 +543,8 @@ class CalculationThread extends Thread {
 //                                }
 //                                zScoreInteraction = -cern.jet.stat.tdouble.Probability.normalInverse(pValueInteraction);
 //                            }
-//                            r.zscores[d][p] = zScoreInteraction;
-//                            r.correlations[d][p] = betaInteractionR;
+//                            randomNumberGenerator.zscores[d][p] = zScoreInteraction;
+//                            randomNumberGenerator.correlations[d][p] = betaInteractionR;
 //
 //                            //                            int dfresiduals = rConnection.eval("m$df.residual").asInteger();
 ////                            double[] coeff = rConnection.eval("m$coefficients").asDoubles();  // intercept: 0, x: 1, z: 2, zx: 3
@@ -603,16 +608,15 @@ class CalculationThread extends Thread {
             if (correlation >= -1 && correlation <= 1) {
                 double zScore = Correlation.convertCorrelationToZScore(x.length, correlation);
                 double[] xcopy = new double[x.length];
-//                double meanx = JSci.maths.ArrayMath.mean(x);
-//                double meany = meanY;
 //                double meany = JSci.maths.ArrayMath.mean(y);
                 for (int i = 0; i < y.length; i++) {
                     y[i] /= stdevy;
-                    xcopy[i] = x[i] /stdevx;
+                    xcopy[i] = x[i] / stdevx;
                 }
+
 //                meany = JSci.maths.ArrayMath.mean(y);
 //                double meanxCopy = JSci.maths.ArrayMath.mean(xcopy);
-//                calculateRegressionCoefficients(xcopy, 0, y, 0, r, d, p);
+//                calculateRegressionCoefficients(xcopy, meanxCopy, y, meany, randomNumberGenerator, d, p);
                 calculateRegressionCoefficients(xcopy, y, r, d, p);
                 if (determinefoldchange) {
                     determineFoldchange(originalGenotypes, y, r, d, p, wp);
@@ -629,6 +633,27 @@ class CalculationThread extends Thread {
         }
     }
 
+    private static void calculateRegressionCoefficients(double[] x, double[] y, Result r, int d, int p) {
+        double beta;
+        double sxx = 0;
+        double sxy = 0;
+
+        for (int i = 0; i < y.length; i++) {
+            sxx += ((x[i]) * (x[i]));
+            sxy += ((y[i]) * (x[i]));
+        }
+
+        beta = sxy / sxx;
+
+        double ssxy = 0;
+        for (int i = 0; i < y.length; i++) {
+            ssxy += ((y[i] - (beta * x[i])) * (y[i] - (beta * x[i])));
+        }
+
+        r.beta[d][p] = beta;
+        r.se[d][p] = Math.sqrt((ssxy/(y.length - 2))/sxx);
+    }
+    
     private static void calculateRegressionCoefficients(double[] x, double meanx, double[] y, double meany, Result r, int d, int p) {
         double beta;
         double alpha;
@@ -997,19 +1022,19 @@ class CalculationThread extends Thread {
 //    }
 //
 //    private void deflateResults(WorkPackage currentWP) {
-//        Result r = currentWP.results;
-////	double[][] datasetZscores = r.zscores;
-//        byte[][] inflatedZScores = new byte[r.zscores.length][0];
-//        if (r != null) {
+//        Result randomNumberGenerator = currentWP.results;
+////	double[][] datasetZscores = randomNumberGenerator.zscores;
+//        byte[][] inflatedZScores = new byte[randomNumberGenerator.zscores.length][0];
+//        if (randomNumberGenerator != null) {
 //            int[] numSamples = null;
 //            try {
-//                numSamples = r.numSamples;
+//                numSamples = randomNumberGenerator.numSamples;
 //            } catch (NullPointerException e) {
 //                System.out.println("ERROR: null result?");
 //            }
 //
-//            double[][] zscores = r.zscores;
-//            int wpId = r.wpid;
+//            double[][] zscores = randomNumberGenerator.zscores;
+//            int wpId = randomNumberGenerator.wpid;
 //
 //            int[] probes = currentWP.getProbes();
 //            SNP[] snps = currentWP.getSnps();
@@ -1072,6 +1097,6 @@ class CalculationThread extends Thread {
 //                }
 //            }
 //        }
-//        r.deflatedZScores = inflatedZScores;
+//        randomNumberGenerator.deflatedZScores = inflatedZScores;
 //    }
 }
