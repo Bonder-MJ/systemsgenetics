@@ -457,7 +457,7 @@ public class BinaryMetaAnalysisSettings {
         this.nrThresds = nrThresds;
     }
 
-    ArrayList<String> getDatasetPrefix() {
+    public ArrayList<String> getDatasetPrefix() {
         return datasetPrefix;
     }
 
