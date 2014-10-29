@@ -19,8 +19,6 @@ import umcg.genetica.io.text.TextFile;
  * @author Harm-Jan
  */
 public class BinaryMicrobiomMetaAnalysisDataset {
-
-    private boolean isCisDataset = false;
     private final String datasetLoc;
     private MetaQTL4MetaTrait[][] snpProbeMap;
 
@@ -75,15 +73,10 @@ public class BinaryMicrobiomMetaAnalysisDataset {
         BinaryFile f = new BinaryFile(matrix, BinaryFile.R);
         int firstInt = f.readInt();
         f.close();
-        isCisDataset = (firstInt == 1);
         System.out.println("Matrix: " + matrix);
         System.out.println("SNPFile: " + snpFile);
         System.out.println("ProbeFile: " + probeFile);
-        if (isCisDataset) {
-            System.out.println("This dataset is a cis- dataset.");
-        } else {
-            System.out.println("This dataset is a full size dataset.");
-        }
+        
         loadSNPs(snpFile);
         System.out.println(snps.length + " SNPs loaded");
         loadProbes(probeFile);
@@ -251,10 +244,6 @@ public class BinaryMicrobiomMetaAnalysisDataset {
 
     public String getAlleleAssessed(int datasetSNPId) {
         return allelesAssessed[datasetSNPId];
-    }
-
-    public boolean getIsCisDataset() {
-        return isCisDataset;
     }
 
     public void close() throws IOException {
