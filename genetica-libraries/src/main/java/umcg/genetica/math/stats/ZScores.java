@@ -156,6 +156,7 @@ public class ZScores {
      *
      * @param correlation correlation coefficient (r)
      * @param nrSamples number of samples used
+     * @param tDist
      * @return Z-score
      */
     public static double correlationToZ(double correlation, int nrSamples, StudentT tDist) {

@@ -17,6 +17,7 @@ public class Correlation {
 
     public static double[][] m_correlationToZScore;
 
+    //Spearman
     public static double rankCorrelate(double[] x, double[] y) {
 
         RankDoubleArray rda = new RankDoubleArray();
@@ -36,6 +37,10 @@ public class Correlation {
         double[] yranked = rda.rank(yNew);
 
         return correlate(xranked, yranked);
+    }
+    
+    public static double spearmanCorrelation(double[] x, double[] y) {
+        return rankCorrelate(x, y);
     }
 
     public static void correlationToZScore(int maxNrSamples) {
