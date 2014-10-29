@@ -60,6 +60,7 @@ public class MicrobialPCABinaryAnalysis {
         System.exit(0);
 
     }
+    
     private MetaQTL4TraitAnnotation probeAnnotation;
     private BinaryMicrobiomMetaAnalysisDataset[] datasets = new BinaryMicrobiomMetaAnalysisDataset[0];
     private int[][] snpIndex;
@@ -142,41 +143,41 @@ public class MicrobialPCABinaryAnalysis {
             ProgressBar pb = new ProgressBar(snpList.length);
             
             for (int snp = 0; snp < snpList.length; snp++) {
-//                boolean printed = false;
-//                int[] sampleSizes = new int[datasets.length];
-//                Boolean[] flipZScores = new Boolean[datasets.length];
-//                String alleles = null;
-//                String alleleAssessed = null;
-//
-//                // determine whether to flip the alleles for a certain dataset
-//                for (int d = 0; d < datasets.length; d++) {
-//
-//                    int datasetSNPId = snpIndex[snp][d];
-//                    if (datasetSNPId != -9) {
-//                        sampleSizes[d] = datasets[d].getSampleSize(datasetSNPId);
-//
-//                        if (alleles == null) {
-//                            flipZScores[d] = false;
-//                            alleles = datasets[d].getAlleles(datasetSNPId);
-//                            alleleAssessed = datasets[d].getAlleleAssessed(datasetSNPId);
-//                        } else {
-//                            String alleles2 = datasets[d].getAlleles(datasetSNPId);
-//                            String alleleAssessed2 = datasets[d].getAlleleAssessed(datasetSNPId);
-//                            flipZScores[d] = BaseAnnot.flipalleles(alleles, alleleAssessed, alleles2, alleleAssessed2);
-//                        }
-//                    }
-//                }
-//
-//
-//                // get all the possible traits near the SNP
-//                Set<MetaQTL4MetaTrait> cisProbesForSNP = probeAnnotation.getMetatraits().getTraitInWindow(snpChr[snp], snpPositions[snp], settings.getCisdistance());
-//                MetaQTL4MetaTrait[] cisProbeArray = cisProbesForSNP.toArray(new MetaQTL4MetaTrait[0]);
-//                HashMap<MetaQTL4MetaTrait, Integer> cisProbeMap = new HashMap<MetaQTL4MetaTrait, Integer>();
-//                int ctr = 0;
-//                for (MetaQTL4MetaTrait cisProbe : cisProbesForSNP) {
-//                    cisProbeMap.put(cisProbe, ctr);
-//                    ctr++;
-//                }
+                boolean printed = false;
+                int[] sampleSizes = new int[datasets.length];
+                Boolean[] flipZScores = new Boolean[datasets.length];
+                String alleles = null;
+                String alleleAssessed = null;
+
+                // determine whether to flip the alleles for a certain dataset
+                for (int d = 0; d < datasets.length; d++) {
+
+                    int datasetSNPId = snpIndex[snp][d];
+                    if (datasetSNPId != -9) {
+                        sampleSizes[d] = datasets[d].getSampleSize(datasetSNPId);
+
+                        if (alleles == null) {
+                            flipZScores[d] = false;
+                            alleles = datasets[d].getAlleles(datasetSNPId);
+                            alleleAssessed = datasets[d].getAlleleAssessed(datasetSNPId);
+                        } else {
+                            String alleles2 = datasets[d].getAlleles(datasetSNPId);
+                            String alleleAssessed2 = datasets[d].getAlleleAssessed(datasetSNPId);
+                            flipZScores[d] = BaseAnnot.flipalleles(alleles, alleleAssessed, alleles2, alleleAssessed2);
+                        }
+                    }
+                }
+
+
+                // get all the possible traits near the SNP
+                Set<MetaQTL4MetaTrait> cisProbesForSNP = probeAnnotation.getMetatraits().getTraitInWindow(snpChr[snp], snpPositions[snp], settings.getCisdistance());
+                MetaQTL4MetaTrait[] cisProbeArray = cisProbesForSNP.toArray(new MetaQTL4MetaTrait[0]);
+                HashMap<MetaQTL4MetaTrait, Integer> cisProbeMap = new HashMap<MetaQTL4MetaTrait, Integer>();
+                int ctr = 0;
+                for (MetaQTL4MetaTrait cisProbe : cisProbesForSNP) {
+                    cisProbeMap.put(cisProbe, ctr);
+                    ctr++;
+                }
 //
 //                float[][] finalZScores = new float[cisProbeMap.size()][datasets.length];
 //
