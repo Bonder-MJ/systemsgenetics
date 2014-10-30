@@ -228,7 +228,7 @@ public class BinaryMicrobePcaAnalysis {
                 }
 
                 for (int i = 0; i < summedPerDataSet.length; i++) {
-                    summedPerDataSet[i] = (float) Math.sqrt(summedPerDataSet[i]);
+                    summedPerDataSet[i] = (float) Correlation.convertCorrelationToZScore(sampleSizes[i],Math.sqrt(summedPerDataSet[i]));
                 }
                 double newMetaZ = Correlation.convertCorrelationToZScore(totalSampleSize, Math.sqrt(summedRsquare));
                 double newMetaAnalysisP = Descriptives.convertZscoreToPvalue(newMetaZ);
