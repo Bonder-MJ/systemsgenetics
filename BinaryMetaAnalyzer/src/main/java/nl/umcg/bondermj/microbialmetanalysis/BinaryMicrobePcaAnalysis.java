@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -29,7 +28,7 @@ import umcg.genetica.text.Strings;
 
 /**
  *
- * @author Harm-Jan
+ * @author Marc Jan & Harm-Jan
  */
 public class BinaryMicrobePcaAnalysis {
 
