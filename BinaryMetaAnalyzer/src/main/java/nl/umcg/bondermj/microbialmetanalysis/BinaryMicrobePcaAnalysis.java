@@ -68,7 +68,6 @@ public class BinaryMicrobePcaAnalysis {
     private QTL[] finalEQTLs;
     private boolean bufferHasOverFlown;
     private double maxSavedPvalue = -Double.MAX_VALUE;
-    private boolean sorted;
     private int locationToStoreResult;
 
     TObjectIntHashMap<MetaQTL4MetaTrait> traitMap = new TObjectIntHashMap<MetaQTL4MetaTrait>();
@@ -87,16 +86,16 @@ public class BinaryMicrobePcaAnalysis {
             tmpbuffersize = 250000;
         }
 
-        finalEQTLs = new QTL[(maxResults + tmpbuffersize)];
+        
         try {
-            run();
+            run((maxResults + tmpbuffersize));
         } catch (IOException ex) {
             Logger.getLogger(BinaryMicrobePcaAnalysis.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
 
-    public void run() throws IOException {
+    public void run(int bufferSize) throws IOException {
 
         String outdir = settings.getOutput();
         outdir = Gpio.formatAsDirectory(outdir);
@@ -107,6 +106,10 @@ public class BinaryMicrobePcaAnalysis {
         loadProbeAnnotation();
 
         for (int permutation = 0; permutation < settings.getNrPermutations() + 1; permutation++) {
+            finalEQTLs = new QTL[bufferSize];
+            locationToStoreResult = 0;
+            bufferHasOverFlown = false;
+            maxSavedPvalue = -Double.MAX_VALUE;
             // create dataset objects
             System.out.println("Running permutation " + permutation);
             datasets = new BinaryMetaAnalysisDataset[settings.getDatasetlocations().size()];
@@ -376,15 +379,11 @@ public class BinaryMicrobePcaAnalysis {
         if (bufferHasOverFlown) {
             if (pval <= maxSavedPvalue) {
 
-                sorted = false;
-
                 finalEQTLs[locationToStoreResult] = q;
                 locationToStoreResult++;
 
                 if (locationToStoreResult == finalEQTLs.length) {
-
                     Arrays.sort(finalEQTLs);
-                    sorted = true;
                     locationToStoreResult = settings.getFinalEQTLBufferMaxLength();
                     maxSavedPvalue = finalEQTLs[(settings.getFinalEQTLBufferMaxLength() - 1)].getPvalue();
                 }
