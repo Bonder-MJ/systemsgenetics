@@ -488,7 +488,7 @@ public class BinaryMetaAnalysis {
 
         String outfilename = outdir + "eQTLs.txt.gz";
         if (permutation > 0) {
-            outfilename = outdir + "PermutationRound-" + permutation + ".txt.gz";
+            outfilename = outdir + "PermutedEQTLsPermutationRound" + permutation + ".txt.gz";
         }
 
         System.out.println("Writing output: " + outfilename);

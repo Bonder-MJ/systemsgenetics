@@ -86,7 +86,6 @@ public class BinaryMicrobePcaAnalysis {
             tmpbuffersize = 250000;
         }
 
-        
         try {
             run((maxResults + tmpbuffersize));
         } catch (IOException ex) {
@@ -142,7 +141,10 @@ public class BinaryMicrobePcaAnalysis {
 
             System.out.println("Starting meta-analysis");
             ProgressBar pb = new ProgressBar(snpList.length);
+
+            snpLoop:
             for (int snp = 0; snp < snpList.length; snp++) {
+
                 boolean printed = false;
                 int[] sampleSizes = new int[datasets.length];
                 int totalSampleSize = 0;
@@ -154,6 +156,9 @@ public class BinaryMicrobePcaAnalysis {
                 for (int d = 0; d < datasets.length; d++) {
 
                     int datasetSNPId = snpIndex[snp][d];
+                    if (datasetSNPId == -9 && settings.isConfineSNPs()) {
+                        continue snpLoop;
+                    }
                     if (datasetSNPId != -9) {
                         sampleSizes[d] = datasets[d].getSampleSize(datasetSNPId);
                         totalSampleSize += sampleSizes[d];
@@ -214,32 +219,51 @@ public class BinaryMicrobePcaAnalysis {
                     }
                 }
                 // meta-analyze!
-
-                double summedRsquare = 0;
-                float[] summedPerDataSet = new float[finalZScores[0].length];
-                for (int probe = 0; probe < traitList.length; probe++) {
-                    double metaAnalysisZ = ZScores.getWeightedZ(finalZScores[probe], sampleSizes);
-                    for (int i = 0; i < finalZScores[probe].length; i++) {
-                        if (probe == 0) {
-                            summedPerDataSet[i] = (float) Math.pow(ZScores.zScoreToCorrelation(finalZScores[probe][i], totalSampleSize), 2);
-                        } else {
-                            summedPerDataSet[i] += Math.pow(ZScores.zScoreToCorrelation(finalZScores[probe][i], totalSampleSize), 2);
-                        }
+                if (permutation > 0) {
+                    double summedRsquare = 0;
+                    for (int probe = 0; probe < traitList.length; probe++) {
+                        double metaAnalysisZ = ZScores.getWeightedZ(finalZScores[probe], sampleSizes);
+                        double tScore = ZScores.zScoreToCorrelation(metaAnalysisZ, totalSampleSize);
+                        summedRsquare += tScore*tScore;
                     }
-                    summedRsquare += Math.pow(ZScores.zScoreToCorrelation(metaAnalysisZ, totalSampleSize), 2);
-                }
+                    double newMetaZ = Correlation.convertCorrelationToZScore(totalSampleSize, Math.sqrt(summedRsquare));
+                    double newMetaAnalysisP = Descriptives.convertZscoreToPvalue(newMetaZ);
 
-                for (int i = 0; i < summedPerDataSet.length; i++) {
-                    summedPerDataSet[i] = (float) Correlation.convertCorrelationToZScore(sampleSizes[i],Math.sqrt(summedPerDataSet[i]));
-                }
-                double newMetaZ = Correlation.convertCorrelationToZScore(totalSampleSize, Math.sqrt(summedRsquare));
-                double newMetaAnalysisP = Descriptives.convertZscoreToPvalue(newMetaZ);
+                    // create output object
+                    if (!Double.isNaN(newMetaAnalysisP)) {
+                        MetaQTL4MetaTrait t = new MetaQTL4MetaTrait(21, "Microbe_Components", "-", -1, -1, "", traitList[0].getPlatformIds());
+                        QTL q = new QTL(newMetaAnalysisP, t, snp, BaseAnnot.toByte(alleleAssessed), newMetaZ, BaseAnnot.toByteArray(alleles), new float[finalZScores[0].length], sampleSizes); // sort buffer if needed.
+                        addEQTL(q);
+                    } else {
+                        System.out.println("Error in procedure.");
+                    }
+                } else {
+                    double summedRsquare = 0;
+                    float[] summedPerDataSet = new float[finalZScores[0].length];
+                    for (int probe = 0; probe < traitList.length; probe++) {
+                        double metaAnalysisZ = ZScores.getWeightedZ(finalZScores[probe], sampleSizes);
+                        for (int i = 0; i < finalZScores[probe].length; i++) {
+                            double tScore = ZScores.zScoreToCorrelation(finalZScores[probe][i], sampleSizes[i]);
+                            summedPerDataSet[i] += tScore*tScore;
+                        }
+                        double tScore = ZScores.zScoreToCorrelation(metaAnalysisZ, totalSampleSize);
+                        summedRsquare += tScore*tScore;
+                    }
 
-                // create output object
-                if (!Double.isNaN(newMetaAnalysisP)) {
-                    MetaQTL4MetaTrait t = new MetaQTL4MetaTrait(21, "Microbe_Components", "-", -1, -1, "", traitList[0].getPlatformIds());
-                    QTL q = new QTL(newMetaAnalysisP, t, snp, BaseAnnot.toByte(alleleAssessed), newMetaZ, BaseAnnot.toByteArray(alleles), summedPerDataSet, sampleSizes); // sort buffer if needed.
-                    addEQTL(q);
+                    for (int i = 0; i < summedPerDataSet.length; i++) {
+                        summedPerDataSet[i] = (float) Correlation.convertCorrelationToZScore(sampleSizes[i], Math.sqrt(summedPerDataSet[i]));
+                    }
+                    double newMetaZ = Correlation.convertCorrelationToZScore(totalSampleSize, Math.sqrt(summedRsquare));
+                    double newMetaAnalysisP = Descriptives.convertZscoreToPvalue(newMetaZ);
+
+                    // create output object
+                    if (!Double.isNaN(newMetaAnalysisP)) {
+                        MetaQTL4MetaTrait t = new MetaQTL4MetaTrait(21, "Microbe_Components", "-", -1, -1, "", traitList[0].getPlatformIds());
+                        QTL q = new QTL(newMetaAnalysisP, t, snp, BaseAnnot.toByte(alleleAssessed), newMetaZ, BaseAnnot.toByteArray(alleles), summedPerDataSet, sampleSizes); // sort buffer if needed.
+                        addEQTL(q);
+                    }  else {
+                        System.out.println("Error in procedure.");
+                    }
                 }
                 pb.iterate();
             }
@@ -412,7 +436,7 @@ public class BinaryMicrobePcaAnalysis {
 
         String outfilename = outdir + "eQTLs.txt.gz";
         if (permutation > 0) {
-            outfilename = outdir + "PermutationRound-" + permutation + ".txt.gz";
+            outfilename = outdir + "PermutedEQTLsPermutationRound" + permutation + ".txt.gz";
         }
 
         System.out.println("Writing output: " + outfilename);
