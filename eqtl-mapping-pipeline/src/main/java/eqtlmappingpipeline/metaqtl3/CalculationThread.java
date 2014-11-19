@@ -347,9 +347,9 @@ class CalculationThread extends Thread {
                 double pval = dsResults.pvalues[p];
                 if (!Double.isNaN(pval)) {
                     if (pval < m_pvaluePlotThreshold) {
-                        if(m_twoPartModel.equals(TwoPartModelMode.BINARY)){
+                        if(m_twoPartModel.equals(TwoPartModelMode.BINARY) || m_twoPartModel.equals(TwoPartModelMode.COMBINED)){
                             m_eQTLPlotter.drawBinary(wp, p);
-                        } else if(m_twoPartModel.equals(TwoPartModelMode.CONTINUES)) {
+                        } else if(m_twoPartModel.equals(TwoPartModelMode.CONTINUES) || m_twoPartModel.equals(TwoPartModelMode.COMBINED)) {
                         } else {
                             m_eQTLPlotter.draw(wp, p);
                         } 
