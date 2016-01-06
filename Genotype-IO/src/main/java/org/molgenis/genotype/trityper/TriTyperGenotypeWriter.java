@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.HashSet;
 import org.apache.log4j.Logger;
 import org.molgenis.genotype.Allele;
 import org.molgenis.genotype.Alleles;
@@ -12,9 +13,9 @@ import org.molgenis.genotype.GenotypeData;
 import org.molgenis.genotype.GenotypeDataException;
 import org.molgenis.genotype.GenotypeWriter;
 import org.molgenis.genotype.Sample;
-import org.molgenis.genotype.plink.PedMapGenotypeWriter;
 import org.molgenis.genotype.variant.GeneticVariant;
 import org.molgenis.genotype.variant.NotASnpException;
+import org.molgenis.genotype.variant.id.GeneticVariantId;
 
 /**
  *
@@ -22,7 +23,7 @@ import org.molgenis.genotype.variant.NotASnpException;
  */
 public class TriTyperGenotypeWriter implements GenotypeWriter {
 
-	private static Logger LOGGER = Logger.getLogger(PedMapGenotypeWriter.class);
+	private static Logger LOGGER = Logger.getLogger(TriTyperGenotypeWriter.class);
 	private final GenotypeData genotypeData;
 
 	public TriTyperGenotypeWriter(GenotypeData genotypeData) {
@@ -48,10 +49,11 @@ public class TriTyperGenotypeWriter implements GenotypeWriter {
 		File snpMapFile = new File(folder, "SNPMappings.txt");
 		File individualFile = new File(folder, "Individuals.txt");
 		File phenotypeAnnotationFile = new File(folder, "PhenotypeInformation.txt");
+        File allelRecodingFile = new File(folder, "AlleleRecodingInformation.txt");
 
 		writeSnps(snpFile, snpMapFile);
 		writeSamples(individualFile, phenotypeAnnotationFile);
-		writeGenotypes(genotypeDataFile, imputedDosageDataFile);
+		writeGenotypes(genotypeDataFile, imputedDosageDataFile, allelRecodingFile);
 
 
 	}
@@ -63,19 +65,22 @@ public class TriTyperGenotypeWriter implements GenotypeWriter {
 
 		for (GeneticVariant variant : genotypeData) {
 
-			if (!variant.isSnp()) {
-				LOGGER.warn("Skipping variant: " + variant.getPrimaryVariantId() + ", it is not a SNP");
-				continue;
-			}
+//			if (!variant.isSnp()) {
+//				LOGGER.warn("Skipping variant: " + variant.getPrimaryVariantId() + ", it is not a SNP.\n");
+//                LOGGER.warn("Will create a remapping file to use the data in TriTyper file format.");
+//				continue;
+//			}
 
-			snpFileWriter.append(variant.getPrimaryVariantId());
+			final String snpName = createTriTyperVariantId(variant);
+			
+			snpFileWriter.append(snpName);
 			snpFileWriter.append('\n');
 
 			snpMapFileWriter.append(variant.getSequenceName());
 			snpMapFileWriter.append('\t');
 			snpMapFileWriter.append(String.valueOf(variant.getStartPos()));
 			snpMapFileWriter.append('\t');
-			snpMapFileWriter.append(variant.getPrimaryVariantId());
+			snpMapFileWriter.append(snpName);
 			snpMapFileWriter.append('\n');
 		}
 
@@ -110,12 +115,16 @@ public class TriTyperGenotypeWriter implements GenotypeWriter {
 
 	}
 
-	private void writeGenotypes(File genotypeDataFile, File imputedDosageDataFile) throws IOException {
+	private void writeGenotypes(File genotypeDataFile, File imputedDosageDataFile, File allelRecodingFile) throws IOException {
 
 		// no need for buffered stream writer. data we write per SNP.
 		FileOutputStream genotypeDataFileWriter = new FileOutputStream(genotypeDataFile);
 		FileOutputStream genotypeDosageDataFileWriter = new FileOutputStream(imputedDosageDataFile);
-
+        
+        HashSet<String> snpRecodingInfo = new HashSet<String>();
+        
+        //Should we skip writing the genotypes?
+        
 		String[] samples = genotypeData.getSampleNames();
 		int sampleCount = samples.length;
 
@@ -124,22 +133,46 @@ public class TriTyperGenotypeWriter implements GenotypeWriter {
 
 		for (GeneticVariant variant : genotypeData) {
 
-			if (!variant.isSnp()) {
-				continue;
-			}
-
 			float[] dosageValues = variant.getSampleDosages();
 			int i = 0;
 			for (Alleles sampleAlleles : variant.getSampleVariants()) {
-
+                
 				if (sampleAlleles.getAlleleCount() != 2) {
 					LOGGER.debug("variant at: " + variant.getSequenceName() + ":" + variant.getStartPos() + " set to missing for " + samples[i]);
 					sampleAlleles = Alleles.BI_ALLELIC_MISSING;
+                    //ToDo should we continue here?
 				}
 
 				try {
-					snpBuffer[i] = sampleAlleles.get(0).isSnpAllele() && sampleAlleles.get(0) != Allele.ZERO ? (byte) sampleAlleles.get(0).getAlleleAsSnp() : 0;
-					snpBuffer[i + sampleCount] = sampleAlleles.get(1).isSnpAllele() && sampleAlleles.get(1) != Allele.ZERO ? (byte) sampleAlleles.get(1).getAlleleAsSnp() : 0;
+                    byte a;
+                    byte b;
+                    if (variant.isSnp()){
+                        a = sampleAlleles.get(0).isSnpAllele() && sampleAlleles.get(0) != Allele.ZERO ? (byte) sampleAlleles.get(0).getAlleleAsSnp() : 0;
+                        b = sampleAlleles.get(1).isSnpAllele() && sampleAlleles.get(1) != Allele.ZERO ? (byte) sampleAlleles.get(1).getAlleleAsSnp() : 0;
+                    } else {
+                        snpRecodingInfo.add(createTriTyperVariantId(variant)+"\t"+variant.getSequenceName()+"\t"+variant.getStartPos()+"\t"+variant.getVariantAlleles().get(0)+"\t"+variant.getVariantAlleles().get(1));
+                        
+                        if(sampleAlleles.get(0).equals(variant.getVariantAlleles().get(0))){
+                            a = (byte) 'A';
+                        } else if(sampleAlleles.get(0).equals(variant.getVariantAlleles().get(1))){
+                            a = (byte) 'C';
+                        } else {
+                            a = 0;
+                        }
+                        
+                        if(sampleAlleles.get(1).equals(variant.getVariantAlleles().get(0))){
+                            b = (byte) 'A';
+                        } else if(sampleAlleles.get(1).equals(variant.getVariantAlleles().get(1))){
+                            b = (byte) 'C';
+                        } else {
+                            b = 0;
+                        }
+
+                    }
+                    
+                    snpBuffer[i] = a;
+                    snpBuffer[i + sampleCount] = b;
+
 				} catch (Exception e) {
 					throw new GenotypeDataException("Error writing TriTyper data: " + e.getMessage(), e);
 				}
@@ -159,9 +192,36 @@ public class TriTyperGenotypeWriter implements GenotypeWriter {
 			genotypeDosageDataFileWriter.write(dosageBuffer);
 
 		}
-
+        
 		genotypeDataFileWriter.close();
 		genotypeDosageDataFileWriter.close();
+        
+        if(!snpRecodingInfo.isEmpty()){
+            BufferedWriter allelRecodingFileWriter = new BufferedWriter(new FileWriter(allelRecodingFile));
+            
+            allelRecodingFileWriter.write("Variant_ID\tChr\tPos\tAllele1\tAllele2\n");
+            for(String s : snpRecodingInfo){
+                allelRecodingFileWriter.write(s+"\n");
+            }
+            
+            allelRecodingFileWriter.close();
+        }
+	}
 
+	private String createTriTyperVariantId(GeneticVariant variant) {
+		final GeneticVariantId snpId = variant.getVariantId();
+		String snpName;
+		if(snpId.containsId()){
+			snpName = snpId.getPrimairyId();
+		} else {
+			snpName = variant.getSequenceName() + ':' + String.valueOf(variant.getStartPos());
+			if(!variant.isSnp()){
+				for(Allele allele : variant.getVariantAlleles()){
+					snpName = snpName + "_" + allele.getAlleleAsString();
+				}
+				
+			}
+		}
+		return snpName;
 	}
 }
