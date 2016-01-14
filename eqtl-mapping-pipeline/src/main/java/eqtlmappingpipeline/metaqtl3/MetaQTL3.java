@@ -279,11 +279,7 @@ public class MetaQTL3 {
         }
 
         for (int i = 0; i < numDatasets; i++) {
-            if (!m_settings.performParametricAnalysis) {
-                m_gg[i].getExpressionData().rankAllExpressionData(m_settings.equalRankForTies);
-            }
-            m_gg[i].getExpressionData().calcAndSubtractMean();
-            m_gg[i].getExpressionData().calcMeanAndVariance();
+            // formally we can't rank here, that is why it is skipped here.
             numAvailableInds += m_gg[i].getExpressionToGenotypeIdArray().length;
         }
 

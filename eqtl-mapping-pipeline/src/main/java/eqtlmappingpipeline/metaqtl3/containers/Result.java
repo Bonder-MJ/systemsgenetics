@@ -11,7 +11,7 @@ package eqtlmappingpipeline.metaqtl3.containers;
 public class Result {
     public double[][]  correlations;
     public double[][]  zscores;
-    public int[] numSamples;
+    public int[][] numSamples;
     public double[] pvalues;
 //    public WorkPackage workpackage;
     public double[] finalZScore;
@@ -37,7 +37,7 @@ public class Result {
     public Result(int numDs, int numProbes, int workpackageid) {
         correlations = new double[numDs][numProbes];
         zscores      = new double[numDs][numProbes];
-        numSamples   = new int[numDs];
+        numSamples   = new int[numDs][numProbes];
         pvalues      = new double[numProbes];
         finalZScore  = new double[numProbes];
         finalBeta    = new double[numProbes];

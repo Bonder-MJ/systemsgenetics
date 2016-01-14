@@ -213,7 +213,7 @@ public class ResultProcessorThread extends Thread {
                                             zscores[d] = r.zscores[d][p];
                                         }
 
-                                        samples[d] = r.numSamples[d];
+                                        samples[d] = r.numSamples[d][p];
                                         fc[d] = r.fc[d][p];
                                         beta[d] = r.beta[d][p];
                                         betase[d] = r.se[d][p];
@@ -339,7 +339,7 @@ public class ResultProcessorThread extends Thread {
     private void writeBinaryResult(Result r) throws IOException {
 
         if (r != null) {
-            int[] numSamples = null;
+            int[][] numSamples = null;
             try {
                 numSamples = r.numSamples;
             } catch (NullPointerException e) {
@@ -381,7 +381,7 @@ public class ResultProcessorThread extends Thread {
                                 snpoutput.append("\t");
                                 snpoutput.append(BaseAnnot.toString(alleleassessed));
                             }
-                            totalSampleNr += r.numSamples[d];
+                            totalSampleNr += r.numSamples[d][0];
                         }
                     }
 

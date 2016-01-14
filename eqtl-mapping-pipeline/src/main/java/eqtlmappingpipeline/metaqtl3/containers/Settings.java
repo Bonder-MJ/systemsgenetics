@@ -30,7 +30,7 @@ import umcg.genetica.io.trityper.util.ChrAnnotation;
 public class Settings extends TriTyperGeneticalGenomicsDatasetSettings {
     
     public enum TwoPartModelMode {
-        CONTINUES, BINARY
+        CONTINUES, BINARY, COMBINED
     };
 
     // Output
