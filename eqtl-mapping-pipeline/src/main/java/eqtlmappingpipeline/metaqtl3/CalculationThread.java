@@ -960,8 +960,15 @@ class CalculationThread extends Thread {
 //                        System.out.println(y2[tellertje]+"\t"+x2[tellertje]);
 //                    }
 //                    System.out.println("");
-//                }
-                    if (correlation >= -1 && correlation <= 1) {
+//                }                   
+                    if (correlation+0.000000001d >= -1 && correlation-0.000000001d <= 1) {
+                        
+                        if(correlation < -1){
+                            correlation =  -1;
+                        } else if(correlation >1){
+                            correlation =  1;
+                        }
+                        
                         double zScore = Correlation.convertCorrelationToZScore(x2.length, correlation);
                         double[] xcopy = x2;
                         double[] y = y2;
