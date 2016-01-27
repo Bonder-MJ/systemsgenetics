@@ -844,26 +844,25 @@ class CalculationThread extends Thread {
             int itr =0;
             
             for (int s = 0; s < sampleCount; s++) {
-                if (rawData[probeId][s] != 0) {
-                    if (includeExpressionSample[s]) {
+                if (includeExpressionSample[s]) {
+                    if (rawData[probeId][s] != 0) {
                         xTemp.add(x[itr]);
                         xTempOrg.add(originalGenotypes[itr]);
                         yTemp.add(rawData[probeId][s]);
-                        itr++;
                     }
+                    itr++;
                 }
             }
-
-
     
             //Add X into this and
             r.numSamples[d][p] = xTemp.size();
                 
-            //Extra controlle part!
+            //Extra control part!
             int[] genotypeFreq = new int[3];
             int[] alleleFreq = new int[2];
-            for (int s = 0; s < xTemp.size(); s++) {
-                switch (roundDosage(xTemp.get(s))) {
+            for (int s = 0; s < xTempOrg.size(); s++) {
+//                System.out.println("\t"+xTempOrg.get(s));
+                switch ((int)xTempOrg.get(s)) {
                     case 0:
                         genotypeFreq[0]++;
                         break;
@@ -879,7 +878,7 @@ class CalculationThread extends Thread {
             alleleFreq[0] = 2 * genotypeFreq[0] + genotypeFreq[1];
             alleleFreq[1] = 2 * genotypeFreq[2] + genotypeFreq[1];
             
-            double MAF = (alleleFreq[0]) / (alleleFreq[0]+alleleFreq[1]);
+            double MAF = (alleleFreq[0]) / ((double)alleleFreq[0]+alleleFreq[1]);
             
             if (alleleFreq[0] > alleleFreq[1]) {
                 MAF = 1 - MAF;
@@ -890,16 +889,16 @@ class CalculationThread extends Thread {
             boolean stop = false;
             if(MAF < maf_Settings || HWEValue <  hwe_Settings){
                 stop = true;
-                
+                System.out.println("Error in snp: ");
+                System.out.println(MAF);
+                System.out.println(HWEValue);
                 r.zscores[d][p] = Double.NaN;
                 r.correlations[d][p] = Double.NaN;
             }
             
 
             if (!stop) {
-                //Re-check HWE and MAF!
-                //double hwe = datasetSNP.getHWEP();
-                //double cr = datasetSNP.getCR();
+
                 //Rank Y2 and X2.
                 double[] y2 = COV_RANKER_TIE.rank(yTemp.toArray());
                 double[] x2 = COV_RANKER_TIE.rank(xTemp.toArray());
