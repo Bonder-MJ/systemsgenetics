@@ -889,9 +889,9 @@ class CalculationThread extends Thread {
             boolean stop = false;
             if(MAF < maf_Settings || HWEValue <  hwe_Settings){
                 stop = true;
-                System.out.println("Error in snp: ");
-                System.out.println(MAF);
-                System.out.println(HWEValue);
+//                System.out.println("Error in snp: ");
+//                System.out.println(MAF);
+//                System.out.println(HWEValue);
                 r.zscores[d][p] = Double.NaN;
                 r.correlations[d][p] = Double.NaN;
             }
