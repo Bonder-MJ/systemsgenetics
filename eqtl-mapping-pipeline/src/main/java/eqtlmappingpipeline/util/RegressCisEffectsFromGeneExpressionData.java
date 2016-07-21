@@ -37,7 +37,7 @@ public class RegressCisEffectsFromGeneExpressionData extends MetaQTL3 {
         boolean binout = false;
         String eqtleffectstoregressout = null;
         Double maf = 0.05;
-        Double hwe = 0.05;
+        Double hwe = 0.0001;
 
         Integer nrEQTLsToOutput = null;
 
