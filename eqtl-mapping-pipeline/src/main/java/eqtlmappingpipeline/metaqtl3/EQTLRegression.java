@@ -168,11 +168,11 @@ public class EQTLRegression {
                                     double[] x = currentSNP.selectGenotypes(indWGA);
                                     double meanX = JSci.maths.ArrayMath.mean(x);
                                     double varianceX = JSci.maths.ArrayMath.variance(x);
-                                    for (int i = 0; i < x.length; i++) {
-                                        x[i] -= meanX;
-                                    }
-
-                                    if (varianceX != 0) {
+                                    
+                                    if (varianceX != 0 && currentDataset.getTotalGGSamples()==x.length) {
+                                        for (int i = 0; i < x.length; i++) {
+                                            x[i] -= meanX;
+                                        }
                                         eventualListOfEQTLs.add(e);
                                         snpsForProbe.add(currentSNP);
                                         xs.add(x);
@@ -357,7 +357,7 @@ public class EQTLRegression {
                         boolean atLeastOnePCANotRegressedOut = false;
                         for (int pca = 0; pca < nrSNPs; pca++) {
                             regressOutPCA[pca] = true;
-                            if (PCA.getEigenValueVar(eigenValues, pca) < 0.01) {
+                            if (PCA.getEigenValueVar(eigenValues, pca) < 1e-10) {
                                 regressOutPCA[pca] = false;
                                 atLeastOnePCANotRegressedOut = true;
                             }
