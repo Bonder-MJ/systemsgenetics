@@ -56,6 +56,7 @@ class CalculationThread extends Thread {
 //    private boolean cisTrans;
     private boolean transOnly;
     private Settings.TwoPartModelMode m_twoPartModel = null;
+    private static boolean parametricAnalysis = false;
 //    private boolean useAbsolutePValues;
     private final EQTLPlotter m_eQTLPlotter;
     private final double m_pvaluePlotThreshold;
@@ -75,7 +76,7 @@ class CalculationThread extends Thread {
 
     CalculationThread(int i, LinkedBlockingQueue<WorkPackage> packageQueue, LinkedBlockingQueue<WorkPackage> resultQueue, TriTyperExpressionData[] expressiondata,
             DoubleMatrixDataset<String, String>[] covariates, IntMatrix2D probeTranslationTable,
-            int[][] expressionToGenotypeIds, Settings settings, EQTLPlotter plotter, boolean binaryoutput, boolean useAbsoluteZScores, boolean testSNPsPresentInBothDatasets) {
+            int[][] expressionToGenotypeIds, Settings settings, EQTLPlotter plotter, boolean binaryoutput, boolean useAbsoluteZScores, boolean testSNPsPresentInBothDatasets, boolean parametric) {
 //        m_binaryoutput = binaryoutput;
         m_name = i;
         m_workpackage_queue = packageQueue;
@@ -122,6 +123,7 @@ class CalculationThread extends Thread {
 
         m_eQTLPlotter = plotter;
         m_pvaluePlotThreshold = settings.plotOutputPValueCutOff;
+        parametricAnalysis = parametric;
     }
 
     @Override
@@ -900,8 +902,18 @@ class CalculationThread extends Thread {
             if (!stop) {
 
                 //Rank Y2 and X2.
-                double[] y2 = COV_RANKER_TIE.rank(yTemp.toArray());
-                double[] x2 = COV_RANKER_TIE.rank(xTemp.toArray());
+                double[] y2;
+                double[] x2;
+                if(!parametricAnalysis){
+                    y2 = COV_RANKER_TIE.rank(yTemp.toArray());
+                    x2 = COV_RANKER_TIE.rank(xTemp.toArray());
+                } else  {
+                    y2 = yTemp.toArray();
+                    x2 = xTemp.toArray();
+                }
+                    
+                
+                
 //            double[] x2 = xTemp.toArray();
 
                 

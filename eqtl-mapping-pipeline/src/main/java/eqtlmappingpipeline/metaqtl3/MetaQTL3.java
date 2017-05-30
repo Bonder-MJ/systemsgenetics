@@ -821,7 +821,7 @@ public class MetaQTL3 {
                 if (!permuting) {
                     plotter = new EQTLPlotter(m_gg, m_settings, m_probeList, m_probeTranslationTable);
                 }
-                pool[tnum] = new CalculationThread(permutationRound, packageQueue, resultQueue, expressiondata, covariateData, m_probeTranslationTable, expressionToGenotypeIds, m_settings, plotter, m_settings.createBinaryOutputFiles, m_settings.useAbsoluteZScorePValue, m_settings.confineSNPsToSNPsPresentInAllDatasets);
+                pool[tnum] = new CalculationThread(permutationRound, packageQueue, resultQueue, expressiondata, covariateData, m_probeTranslationTable, expressionToGenotypeIds, m_settings, plotter, m_settings.createBinaryOutputFiles, m_settings.useAbsoluteZScorePValue, m_settings.confineSNPsToSNPsPresentInAllDatasets, m_settings.performParametricAnalysis);
                 pool[tnum].setName("CalcThread-" + tnum);
                 pool[tnum].start();
 
